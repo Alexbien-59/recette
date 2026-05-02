@@ -1,50 +1,55 @@
 # 🍳 MaRecette
 
-> **Cuisine du quotidien** — Vos recettes classées par catégorie, recherche par ingrédients, favoris et notes personnelles. Installable sur mobile.
+**Cuisine du quotidien** — Trouvez des recettes à partir de vos ingrédients, explorez le catalogue, sauvegardez vos favoris. Installable sur mobile comme une vraie application.
 
-🔗 **[Ouvrir l'application](https://alexbien-59.github.io/marecette/)**
-
----
-
-## ✨ Fonctionnalités
-
-- 🔍 **Recherche par ingrédients** — sélectionnez ce que vous avez, trouvez les recettes possibles triées par correspondance
-- 📚 **Catalogue** — recettes filtrables par type de plat ou culture, mode aléatoire
-- 🎲 **Recette aléatoire**
-- ❤️ **Favoris** — sauvegardez vos recettes préférées, affichées en tête du catalogue
-- 📝 **Notes personnelles** — ajoutez vos astuces sur chaque fiche
-- 📱 **PWA** — installable sur mobile, fonctionne hors ligne
+[![Ouvrir l'application](https://img.shields.io/badge/▶%20Ouvrir%20l'application-C4622D?style=for-the-badge)](https://alexbien-59.github.io/marecette/)
 
 ---
 
-## 📱 Installer sur votre téléphone
+## Fonctionnalités
 
-### iPhone / iPad (Safari)
+| | |
+|---|---|
+| 🔍 **Recherche par ingrédients** | Sélectionnez ce que vous avez, obtenez les recettes compatibles triées par correspondance |
+| 📚 **Catalogue complet** | Filtrez par type de plat ou par culture culinaire |
+| 🎲 **Recette aléatoire** | Laissez-vous inspirer |
+| ❤️ **Favoris** | Sauvegardés localement, affichés en tête du catalogue |
+| 📝 **Notes personnelles** | Ajoutez vos astuces sur chaque fiche recette |
+| 📱 **PWA** | Installable sur mobile, fonctionne hors ligne |
+
+---
+
+## Installer l'application
+
+### iPhone / iPad
+
 1. Ouvrez l'URL dans **Safari**
-2. Appuyez sur **Partager** ↑ → **"Sur l'écran d'accueil"**
-3. Confirmez
+2. Appuyez sur l'icône **Partager** en bas de l'écran
+3. Sélectionnez **"Sur l'écran d'accueil"**
+4. Confirmez — l'icône 🍳 apparaît sur votre écran
 
-### Android (Chrome)
+### Android
+
 1. Ouvrez l'URL dans **Chrome**
-2. Menu **⋮** → **"Ajouter à l'écran d'accueil"**
+2. Appuyez sur le menu **⋮** en haut à droite
+3. Sélectionnez **"Ajouter à l'écran d'accueil"**
 
 ---
 
-## 🗂 Structure du projet
+## Structure du projet
 
 ```
-marecette/
-├── index.html      ← Application complète
-├── manifest.json   ← Configuration PWA
-├── sw.js           ← Service Worker (cache hors ligne)
-├── icon-192.png    ← Icône 192×192
-└── icon-512.png    ← Icône 512×512
+├── index.html       Application complète (HTML + CSS + JS)
+├── manifest.json    Configuration PWA
+├── sw.js            Service Worker — cache hors ligne
+├── icon-192.png     Icône 192 x 192 px
+└── icon-512.png     Icône 512 x 512 px
 ```
 
 ---
 
-## 🛠 Technologies
+## Technologies
 
-- HTML / CSS / JavaScript vanilla
-- PWA — Service Worker + Web App Manifest
-- localStorage pour favoris, notes et évaluations
+- HTML / CSS / JavaScript — aucune dépendance externe
+- PWA : Service Worker + Web App Manifest
+- `localStorage` pour les favoris, notes et historique
