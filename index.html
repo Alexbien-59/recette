@@ -178,6 +178,10 @@
       padding: 2px 9px; border-radius: 20px;
       background: var(--tag-bg); font-size: 11px; color: var(--text2);
     }
+    .tag.diff-facile { background: #E8F3E6; color: var(--easy); }
+    .tag.diff-moyen { background: #F5EDDE; color: var(--medium); }
+    .tag.diff-difficile { background: #F5E6E6; color: var(--hard); }
+    /* Alias anglais conservés pour compatibilité */
     .tag.diff-easy { background: #E8F3E6; color: var(--easy); }
     .tag.diff-medium { background: #F5EDDE; color: var(--medium); }
     .tag.diff-hard { background: #F5E6E6; color: var(--hard); }
@@ -966,8 +970,13 @@ function goBack() {
 }
 
 // Chargement des familles d'ingrédients (page recherche)
+// Guard : on ne reconstruit le DOM qu'une seule fois pour éviter
+// d'effacer les sélections en cours à chaque visite de la page.
 function loadIngredientFamilies() {
   const container = document.getElementById('families-container');
+  if (container.dataset.loaded) return;
+  container.dataset.loaded = '1';
+
   container.innerHTML = FAMILIES.map(family => `
     <div class="family-block">
       <div class="family-label">
@@ -975,17 +984,20 @@ function loadIngredientFamilies() {
       </div>
       <div class="ingredient-chips">
         ${family.items.map(item => `
-          <span class="ingredient-chip" onclick="toggleIngredient(this, '${item}')">${item}</span>
+          <span class="ingredient-chip" data-item="${item.replace(/"/g, '&quot;')}">${item}</span>
         `).join('')}
       </div>
     </div>
   `).join('');
-}
 
-// Sélection/désélection d'un ingrédient
-function toggleIngredient(chip, ingredient) {
-  chip.classList.toggle('selected');
-  updateSearchButton();
+  // Délégation d'événement sur le conteneur : un seul listener pour tous les chips.
+  // Évite le bug des apostrophes dans les onclick inline (ex: "Huile d'olive").
+  container.addEventListener('click', function(e) {
+    const chip = e.target.closest('.ingredient-chip');
+    if (!chip) return;
+    chip.classList.toggle('selected');
+    updateSearchButton();
+  });
 }
 
 // Mise à jour du bouton de recherche
@@ -1021,8 +1033,9 @@ function shuffle(arr) {
 }
 
 function doSearch() {
+  // Lire data-item (pas textContent) pour avoir le nom exact sans risque d'encodage HTML
   const selectedIngredients = Array.from(document.querySelectorAll('.ingredient-chip.selected'))
-    .map(chip => chip.textContent.trim());
+    .map(chip => chip.dataset.item || chip.textContent.trim());
 
   const resultsContainer = document.getElementById('search-results');
 
@@ -1179,11 +1192,11 @@ function onCatSearch(query) {
   `;
 }
 
-// Effacer la recherche
+// Effacer la recherche et revenir au catalogue normal
 function clearCatSearch() {
   document.getElementById('cat-search-input').value = '';
   document.getElementById('cat-search-clear').style.display = 'none';
-  filterCatalogue('all');
+  loadCatalogueTabs(); // Recharge les onglets et affiche "Toutes" sans crash
 }
 
 // Recette aléatoire
@@ -1366,16 +1379,16 @@ window.onload = function() {
     const scrollTop = document.getElementById('btn-scroll-top');
     scrollTop.classList.toggle('visible', window.scrollY > 80);
   });
-
-  // ── Enregistrement du Service Worker (PWA) ────────────────────────────
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('./sw.js')
-        .then(function(reg) { console.log('[PWA] SW enregistré :', reg.scope); })
-        .catch(function(err) { console.warn('[PWA] SW échoué :', err); });
-    });
-  }
 };
+
+// ── Enregistrement du Service Worker (PWA) ────────────────────────────────
+// Uniquement sur GitHub Pages — évite le message d'erreur 404 dans les
+// environnements de prévisualisation qui ne servent pas sw.js.
+if ('serviceWorker' in navigator && location.hostname.includes('github.io')) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(function(reg) { console.log('[PWA] SW enregistré :', reg.scope); })
+    .catch(function(err) { console.warn('[PWA] SW échoué :', err); });
+}
 </script>
 
 </body>
