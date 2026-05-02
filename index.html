@@ -1382,11 +1382,12 @@ window.onload = function() {
 };
 
 // ── Enregistrement du Service Worker (PWA) ────────────────────────────────
-// Uniquement sur GitHub Pages — évite le message d'erreur 404 dans les
-// environnements de prévisualisation qui ne servent pas sw.js.
-if ('serviceWorker' in navigator && location.hostname.includes('github.io')) {
+// On exclut uniquement l'environnement de prévisualisation Claude
+// (claudeusercontent.com ne sert pas sw.js).
+// Fonctionne sur GitHub Pages, localhost, et tout autre hébergeur HTTPS.
+if ('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent')) {
   navigator.serviceWorker.register('./sw.js')
-    .then(function(reg) { console.log('[PWA] SW enregistré :', reg.scope); })
+    .then(function(reg) { console.log('[PWA] SW enregistré, scope :', reg.scope); })
     .catch(function(err) { console.warn('[PWA] SW échoué :', err); });
 }
 </script>
