@@ -1,17 +1,22 @@
 /* ════════════════════════════════════════════════════════════════════════
-   MaRecette — Service Worker
-   Stratégie : Cache First — hors ligne après la première visite.
+   MaRecette — Service Worker v3
+   ────────────────────────────────────────────────────────────────────────
+   Stratégie : Cache First + notification de mise à jour.
 
-   IMPORTANT : on utilise self.registration.scope pour construire les
-   chemins dynamiquement. Cela rend le SW indépendant du nom du dépôt
-   GitHub (marecette, MaRecette, ma-recette, peu importe).
+   Fonctionnement de la mise à jour :
+   1. Le navigateur détecte que sw.js a changé (CACHE_VERSION ou contenu).
+   2. Le nouveau SW s'installe mais NE prend PAS le contrôle tout de suite
+      — il entre en état "waiting" pour ne pas casser la session en cours.
+   3. Il envoie un message 'SW_WAITING' à tous les onglets ouverts.
+   4. L'app reçoit ce message et affiche le bouton flottant "Mettre à jour".
+   5. Quand l'utilisateur clique, l'app envoie 'SKIP_WAITING' au SW.
+   6. Le SW appelle skipWaiting(), prend le contrôle, et l'app se recharge.
+
+   Pour déclencher une mise à jour : il suffit de changer CACHE_VERSION.
    ════════════════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'marecette-v2';
+const CACHE_VERSION = 'marecette-v3';
 
-/* Les assets sont résolus au moment de l'installation, quand
-   self.registration.scope est connu (ex: https://user.github.io/repo/).
-   On n'utilise PLUS de chemins absolus codés en dur.              */
 function getAssets() {
   const base = self.registration.scope;
   return [
@@ -25,25 +30,29 @@ function getAssets() {
 
 /* ── Installation ─────────────────────────────────────────────────────── */
 self.addEventListener('install', function(event) {
-  console.log('[SW] Installation, scope :', self.registration.scope);
+  console.log('[SW] Nouvelle version détectée :', CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_VERSION)
-      .then(function(cache) {
-        return cache.addAll(getAssets());
-      })
+      .then(function(cache) { return cache.addAll(getAssets()); })
       .then(function() {
-        /* Force l'activation immédiate sans attendre la fermeture des onglets */
-        return self.skipWaiting();
+        /* On NE fait PAS skipWaiting() ici — le SW reste en état "waiting".
+           C'est l'utilisateur qui décidera via le bouton flottant.        */
+        console.log('[SW] En attente d\'activation (waiting)');
+
+        /* Notifier tous les onglets ouverts qu'une mise à jour est prête  */
+        self.clients.matchAll({ includeUncontrolled: true }).then(function(clients) {
+          clients.forEach(function(client) {
+            client.postMessage({ type: 'SW_WAITING', version: CACHE_VERSION });
+          });
+        });
       })
-      .catch(function(err) {
-        console.error('[SW] Échec de la mise en cache :', err);
-      })
+      .catch(function(err) { console.error('[SW] Échec mise en cache :', err); })
   );
 });
 
 /* ── Activation ───────────────────────────────────────────────────────── */
 self.addEventListener('activate', function(event) {
-  console.log('[SW] Activation');
+  console.log('[SW] Activation :', CACHE_VERSION);
   event.waitUntil(
     caches.keys()
       .then(function(keys) {
@@ -56,61 +65,51 @@ self.addEventListener('activate', function(event) {
             })
         );
       })
-      .then(function() {
-        /* Prend le contrôle de tous les onglets ouverts immédiatement */
-        return self.clients.claim();
-      })
+      .then(function() { return self.clients.claim(); })
   );
+});
+
+/* ── Messages reçus de l'app ──────────────────────────────────────────── */
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    /* L'utilisateur a cliqué sur "Mettre à jour" — on prend le contrôle */
+    console.log('[SW] skipWaiting() déclenché par l\'utilisateur');
+    self.skipWaiting();
+  }
 });
 
 /* ── Fetch : Cache First ──────────────────────────────────────────────── */
 self.addEventListener('fetch', function(event) {
-  /* Ignorer les requêtes non-GET */
   if (event.request.method !== 'GET') return;
 
-  /* Ignorer les requêtes vers des origines tierces (Google Fonts, CDN…)
-     sauf si elles sont déjà dans le cache                               */
   var url = new URL(event.request.url);
   var isThirdParty = url.origin !== self.location.origin;
 
   event.respondWith(
     caches.match(event.request).then(function(cached) {
-      /* Ressource trouvée en cache → on la sert directement (rapide + hors ligne) */
       if (cached) return cached;
 
-      /* Pas en cache → réseau */
       return fetch(event.request).then(function(response) {
-        /* Ne pas mettre en cache les réponses invalides ou les ressources tierces */
-        if (!response || response.status !== 200 || isThirdParty) {
-          return response;
-        }
-        /* Cloner : la réponse réseau ne peut être consommée qu'une fois */
+        if (!response || response.status !== 200 || isThirdParty) return response;
         var toCache = response.clone();
         caches.open(CACHE_VERSION).then(function(cache) {
           cache.put(event.request, toCache);
         });
         return response;
-
       }).catch(function() {
-        /* Hors ligne et pas en cache → page de repli minimaliste */
         return new Response(
           [
             '<!DOCTYPE html><html lang="fr"><head>',
             '<meta charset="UTF-8">',
             '<meta name="viewport" content="width=device-width,initial-scale=1">',
             '<title>MaRecette — Hors ligne</title>',
-            '<style>',
-            'body{font-family:sans-serif;background:#FDFAF5;color:#C4622D;',
+            '<style>body{font-family:sans-serif;background:#FDFAF5;color:#C4622D;',
             'display:flex;flex-direction:column;align-items:center;',
             'justify-content:center;min-height:100vh;text-align:center;padding:24px}',
-            'h2{font-size:28px;margin-bottom:12px}',
-            'p{color:#6B5D4F;max-width:320px;line-height:1.6}',
-            '</style></head><body>',
-            '<h2>🍳 MaRecette</h2>',
-            '<p>Vous êtes hors ligne.<br>',
-            'Ouvrez l\'application une première fois en ligne ',
-            'pour activer le mode hors ligne.</p>',
-            '</body></html>'
+            'h2{font-size:28px;margin-bottom:12px}p{color:#6B5D4F;max-width:320px;line-height:1.6}',
+            '</style></head><body><h2>🍳 MaRecette</h2>',
+            '<p>Vous êtes hors ligne.<br>Ouvrez l\'app une première fois en ligne',
+            ' pour activer le mode hors ligne.</p></body></html>'
           ].join(''),
           { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );

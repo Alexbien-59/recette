@@ -451,6 +451,23 @@
     .filter-select:focus { border-color: var(--accent); }
     .filter-select.active { border-color: var(--accent); color: var(--accent); }
 
+    /* ---- FAB MISE À JOUR ---- */
+    .fab-update {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(16px);
+      z-index: 300;
+      padding: 13px 24px; border-radius: 50px;
+      background: #4a7c59; color: white; border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      display: flex; align-items: center; gap: 8px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s, transform .3s;
+      white-space: nowrap;
+    }
+    .fab-update.visible { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+    .fab-update:hover { filter: brightness(1.12); }
+    @media (max-width:480px) { .fab-update { font-size:13px; padding:11px 18px; bottom:70px; } }
+
     /* ---- FAB RESET CATALOGUE ---- */
     .fab-reset {
       position: fixed; bottom: 24px; right: 24px; z-index: 200;
@@ -544,6 +561,26 @@
     }
     .random-mode-btn:hover { border-color: var(--accent); color: var(--accent); }
     .random-mode-btn.active { border-color: var(--accent); background: var(--accent); color: white; }
+
+    /* ---- ACCOMPAGNEMENT ---- */
+    .accompagnement-block {
+      margin-top: 20px; padding: 14px 18px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .accompagnement-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+      color: var(--text3); font-weight: 500; margin-bottom: 10px;
+    }
+    .accompagnement-list {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .accompagnement-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 20px;
+      background: var(--surface2); border: 1px solid var(--border);
+      font-size: 13px; color: var(--text2);
+    }
   </style>
 </head>
 <body>
@@ -660,6 +697,9 @@
   <div id="cat-tabs"></div>
   <div id="catalogue-results"></div>
 </div>
+
+<!-- FAB mise à jour PWA -->
+<button class="fab-update" id="fab-update" onclick="applyUpdate()">🔄 Mettre à jour</button>
 
 <!-- FAB réinitialiser (catalogue seulement) -->
 <button class="fab-reset" id="fab-reset" onclick="resetAllFilters()">↑ Réinitialiser</button>
@@ -1117,7 +1157,75 @@ const RECIPES = [
 {"id": 450, "title": "Bowl de lentilles beluga, betterave et fromage de chèvre", "emoji": "🧀", "cat": "Plats principaux", "origin": "Française", "diff": "facile", "prep": 15, "cook": 20, "portions": 2, "ingredients": [["Lentilles beluga", 100, "g"], ["Betterave cuite", 1, ""], ["Fromage de chèvre", 60, "g"], ["Noix", 20, "g"], ["Vinaigre balsamique", 1, "c.à.s"], ["Huile d’olive", 1, "c.à.s"], ["Miel", 0.5, "c.à.c"], ["Thym", 1, "c.à.c"]], "tags": ["Lentilles beluga", "Betterave", "Chèvre", "Noix"], "steps": ["Faites cuire les lentilles 20 min dans l’eau bouillante.", "Coupez betterave et chèvre en dés.", "Disposez dans un bol avec lentilles et noix.", "Arrosez de vinaigrette (vinaigre, huile, miel, thym)."]}];
 
 
-// ===================== PRIX & VÉGÉTARIEN =====================
+// ===================== ACCOMPAGNEMENTS =====================
+// Suggestions d'accompagnement pour chaque recette (3 propositions par recette)
+// Clé = id de recette, valeur = tableau de 3 suggestions
+const ACCOMPAGNEMENTS = {
+  1:["Frites maison","Salade verte","Sauce béarnaise"],2:["Pommes de terre vapeur","Pain de campagne","Vin rouge tannique"],3:["Pommes de terre vapeur","Pain de campagne","Vin rouge tannique"],4:["Cornichons","Moutarde forte","Sel de Guérande"],5:["Salade verte","Jambon blanc","Vin blanc de Savoie"],6:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],
+  7:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],8:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],9:["Rouille maison","Pain grillé","Vin blanc de Provence"],10:["Cidre brut","Compote maison","Salade verte"],11:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],12:["Glace vanille","Crème fouettée","Café ou thé"],
+  13:["Glace vanille","Crème fouettée","Café ou thé"],14:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],15:["Frites belges","Pain beurré","Vin blanc Muscadet"],16:["Vin de Sauternes","Crème anglaise","Café noir"],17:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],18:["Pommes de terre vapeur","Pain de campagne","Vin rouge tannique"],
+  19:["Croûtons dorés","Crème fraîche","Pain grillé frotté à l'ail"],20:["Riz basmati","Légumes rôtis","Pain maison"],21:["Riz basmati","Légumes rôtis","Pain maison"],22:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],23:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],24:["Glace vanille","Crème fouettée","Café ou thé"],
+  25:["Gratin dauphinois","Flageolets","Vin rouge de Bordeaux"],26:["Glace vanille","Coulis de fruits rouges","Café espresso"],27:["Riz basmati","Légumes rôtis","Pain maison"],28:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],29:["Riz basmati","Légumes rôtis","Pain maison"],30:["Salade verte","Chutney de tomates","Vin blanc fruité"],
+  31:["Glace vanille","Crème fouettée","Café ou thé"],32:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],33:["Glace vanille","Crème fouettée","Café ou thé"],34:["Riz basmati","Légumes rôtis","Pain maison"],35:["Glace vanille","Crème fouettée","Café ou thé"],36:["Parmesan râpé","Pain à l'ail","Salade romaine"],
+  37:["Parmesan en copeaux","Vin blanc sec (Soave)","Roquette huile d'olive"],38:["Salade caprese","Bière italienne","Tiramisu en dessert"],39:["Pommes de terre vapeur","Pain de campagne","Vin rouge tannique"],40:["Café ristretto","Amaretto","Biscotti maison"],41:["Parmesan râpé","Pain à l'ail","Salade romaine"],42:["Sauce dip maison","Coleslaw","Bière artisanale"],
+  43:["Parmesan râpé","Pain à l'ail","Salade romaine"],44:["Riz basmati","Légumes rôtis","Pain maison"],45:["Café ristretto","Amaretto","Biscotti maison"],46:["Riz basmati","Légumes rôtis","Pain maison"],47:["Salade verte","Toast de pain complet","Jus d'orange frais"],48:["Croûtons dorés","Crème fraîche","Pain grillé frotté à l'ail"],
+  49:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],50:["Sauce dip maison","Coleslaw","Bière artisanale"],51:["Sauce dip maison","Coleslaw","Bière artisanale"],52:["Riz basmati","Légumes rôtis","Pain maison"],53:["Café ristretto","Amaretto","Biscotti maison"],54:["Croûtons dorés","Crème fraîche","Pain grillé frotté à l'ail"],
+  55:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],56:["Riz basmati","Légumes rôtis","Pain maison"],57:["Riz basmati","Légumes rôtis","Pain maison"],58:["Pain grillé","Vinaigrette maison","Parmesan copeaux"],59:["Croûtons dorés","Crème fraîche","Pain grillé frotté à l'ail"],60:["Glace vanille","Crème fouettée","Café ou thé"],
+  61:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],62:["Riz basmati","Légumes rôtis","Pain maison"],63:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],64:["Riz basmati","Légumes rôtis","Pain maison"],65:["Sauce dip maison","Coleslaw","Bière artisanale"],66:["Riz basmati","Légumes rôtis","Pain maison"],
+  67:["Gratin dauphinois","Flageolets","Vin rouge de Bordeaux"],68:["Riz basmati","Légumes rôtis","Pain maison"],69:["Riz basmati","Légumes rôtis","Pain maison"],70:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],71:["Sauce dip maison","Coleslaw","Bière artisanale"],72:["Glace vanille","Crème fouettée","Café ou thé"],
+  73:["Purée de pommes de terre","Compote de pommes","Moutarde à l'ancienne"],74:["Soupe miso","Edamame","Thé vert sencha"],75:["Rouleaux de printemps","Soupe miso","Thé vert japonais"],76:["Pain grillé","Vinaigrette maison","Parmesan copeaux"],77:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],78:["Riz basmati","Légumes rôtis","Pain maison"],
+  79:["Riz basmati","Pain naan","Raïta concombre-menthe"],80:["Croûtons dorés","Crème fraîche","Pain grillé frotté à l'ail"],81:["Purée de pommes de terre","Compote de pommes","Moutarde à l'ancienne"],82:["Riz japonais","Edamame","Bière Sapporo"],83:["Rouleaux de printemps","Soupe miso","Thé vert japonais"],84:["Purée de pommes de terre","Compote de pommes","Moutarde à l'ancienne"],
+  85:["Soupe miso","Edamame","Thé vert sencha"],86:["Sauce dip maison","Coleslaw","Bière artisanale"],87:["Pain grillé à l'aïoli","Sangria légère","Salade de tomates"],88:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],89:["Riz basmati","Légumes rôtis","Pain maison"],90:["Glace vanille","Crème fouettée","Café ou thé"],
+  91:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],92:["Pommes de terre vapeur","Pain de campagne","Vin rouge tannique"],93:["Riz basmati","Légumes rôtis","Pain maison"],94:["Sauce dip maison","Coleslaw","Bière artisanale"],95:["Glace vanille","Crème fouettée","Café ou thé"],96:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],
+  97:["Riz basmati","Légumes rôtis","Pain maison"],98:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],99:["Amuse-bouches salés","Olives marinées","Chips artisanales"],100:["Sauce dip maison","Coleslaw","Bière artisanale"],101:["Riz basmati","Légumes rôtis","Pain maison"],102:["Glace vanille","Crème fouettée","Café ou thé"],
+  103:["Glace vanille","Crème fouettée","Café ou thé"],104:["Pâtes fraîches","Viande grillée","Légumes vapeur"],105:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],106:["Riz basmati","Légumes rôtis","Pain maison"],107:["Pommes de terre vapeur","Pain de campagne","Vin rouge tannique"],108:["Sauce dip maison","Coleslaw","Bière artisanale"],
+  109:["Sauce dip maison","Coleslaw","Bière artisanale"],110:["Frites maison","Salade verte","Sauce béarnaise"],111:["Glace vanille","Crème fouettée","Café ou thé"],112:["Amuse-bouches salés","Olives marinées","Chips artisanales"],113:["Glace vanille","Crème fouettée","Café ou thé"],114:["Riz basmati","Légumes rôtis","Pain maison"],
+  115:["Croûtons dorés","Crème fraîche","Pain grillé frotté à l'ail"],116:["Riz basmati","Légumes rôtis","Pain maison"],117:["Glace vanille","Crème fouettée","Café ou thé"],118:["Riz basmati","Légumes rôtis","Pain maison"],119:["Riz basmati","Légumes rôtis","Pain maison"],120:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],
+  121:["Riz basmati","Légumes rôtis","Pain maison"],122:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],123:["Riz basmati","Légumes rôtis","Pain maison"],124:["Riz basmati","Légumes rôtis","Pain maison"],125:["Glace vanille","Crème fouettée","Café ou thé"],126:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],
+  127:["Riz basmati","Légumes rôtis","Pain maison"],128:["Glace vanille","Crème fouettée","Café ou thé"],129:["Riz basmati","Légumes rôtis","Pain maison"],130:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],131:["Riz basmati","Légumes rôtis","Pain maison"],132:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],
+  133:["Glace vanille","Crème fouettée","Café ou thé"],134:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],135:["Pommes de terre vapeur","Pain de campagne","Vin rouge tannique"],136:["Café ristretto","Amaretto","Biscotti maison"],137:["Pommes de terre vapeur","Pain de campagne","Vin rouge tannique"],138:["Frites belges","Pain beurré","Vin blanc Muscadet"],
+  139:["Glace vanille","Crème fouettée","Café ou thé"],140:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],141:["Riz basmati","Légumes rôtis","Pain maison"],142:["Glace vanille","Crème fouettée","Café ou thé"],143:["Riz basmati","Légumes rôtis","Pain maison"],144:["Riz basmati","Légumes rôtis","Pain maison"],
+  145:["Glace vanille","Crème fouettée","Café ou thé"],146:["Riz basmati","Légumes rôtis","Pain maison"],147:["Glace vanille","Crème fouettée","Café ou thé"],148:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],149:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],150:["Salade verte","Jambon blanc","Vin blanc de Savoie"],
+  154:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],155:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],157:["Glace vanille","Crème fouettée","Café ou thé"],159:["Riz basmati","Légumes rôtis","Pain maison"],162:["Vin de Sauternes","Crème anglaise","Café noir"],165:["Sauce dip maison","Coleslaw","Bière artisanale"],
+  166:["Glace vanille","Crème fouettée","Café ou thé"],167:["Glace vanille","Crème fouettée","Café ou thé"],168:["Glace vanille","Crème fouettée","Café ou thé"],169:["Glace vanille","Crème fouettée","Café ou thé"],170:["Cidre brut","Compote maison","Salade verte"],171:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],
+  173:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],174:["Salade verte","Chutney de tomates","Vin blanc fruité"],175:["Sauce dip maison","Coleslaw","Bière artisanale"],176:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],177:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],178:["Riz basmati","Légumes rôtis","Pain maison"],
+  180:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],183:["Riz basmati","Légumes rôtis","Pain maison"],184:["Riz basmati","Légumes rôtis","Pain maison"],185:["Sauce dip maison","Coleslaw","Bière artisanale"],186:["Sauce dip maison","Coleslaw","Bière artisanale"],187:["Semoule à la vapeur","Harissa","Thé à la menthe"],
+  188:["Gratin dauphinois","Flageolets","Vin rouge de Bordeaux"],189:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],190:["Croûtons dorés","Crème fraîche","Pain grillé frotté à l'ail"],191:["Riz basmati","Légumes rôtis","Pain maison"],192:["Sauce dip maison","Coleslaw","Bière artisanale"],193:["Riz basmati","Légumes rôtis","Pain maison"],
+  194:["Riz basmati","Légumes rôtis","Pain maison"],195:["Croûtons dorés","Crème fraîche","Pain grillé frotté à l'ail"],196:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],197:["Viande en sauce","Poisson grillé","Œufs pochés"],198:["Riz basmati","Légumes rôtis","Pain maison"],199:["Riz basmati","Légumes rôtis","Pain maison"],
+  200:["Frites maison","Salade verte","Sauce béarnaise"],201:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],202:["Sauce dip maison","Coleslaw","Bière artisanale"],203:["Riz basmati","Légumes rôtis","Pain maison"],204:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],205:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],
+  206:["Glace vanille","Crème fouettée","Café ou thé"],207:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],208:["Riz basmati","Légumes rôtis","Pain maison"],209:["Riz basmati","Pain naan","Raïta concombre-menthe"],210:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],211:["Glace vanille","Crème fouettée","Café ou thé"],
+  212:["Sauce dip maison","Coleslaw","Bière artisanale"],213:["Riz basmati","Pain naan","Raïta concombre-menthe"],214:["Riz basmati","Pain naan","Raïta concombre-menthe"],215:["Riz basmati","Légumes rôtis","Pain maison"],216:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],217:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],
+  218:["Glace vanille","Crème fouettée","Café ou thé"],219:["Riz basmati","Légumes rôtis","Pain maison"],220:["Sauce dip maison","Coleslaw","Bière artisanale"],221:["Pâtes fraîches","Viande grillée","Légumes vapeur"],222:["Riz basmati","Légumes rôtis","Pain maison"],223:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],
+  224:["Glace vanille","Coulis de fruits rouges","Café espresso"],225:["Riz basmati","Légumes rôtis","Pain maison"],226:["Riz basmati","Pain naan","Raïta concombre-menthe"],227:["Sauce dip maison","Coleslaw","Bière artisanale"],228:["Riz basmati","Légumes rôtis","Pain maison"],229:["Cidre brut","Compote maison","Salade verte"],
+  230:["Sauce dip maison","Coleslaw","Bière artisanale"],231:["Riz basmati","Légumes rôtis","Pain maison"],232:["Glace vanille","Crème fouettée","Café ou thé"],233:["Glace vanille","Crème fouettée","Café ou thé"],234:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],235:["Riz basmati","Légumes rôtis","Pain maison"],
+  236:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],237:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],238:["Frites maison","Salade verte","Sauce béarnaise"],239:["Amuse-bouches salés","Olives marinées","Chips artisanales"],240:["Riz basmati","Légumes rôtis","Pain maison"],241:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],
+  242:["Riz basmati","Légumes rôtis","Pain maison"],243:["Glace vanille","Crème fouettée","Café ou thé"],244:["Sauce dip maison","Coleslaw","Bière artisanale"],245:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],246:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],247:["Pâtes fraîches","Viande grillée","Légumes vapeur"],
+  248:["Riz basmati","Légumes rôtis","Pain maison"],249:["Sauce dip maison","Coleslaw","Bière artisanale"],250:["Riz basmati","Légumes rôtis","Pain maison"],251:["Amuse-bouches salés","Olives marinées","Chips artisanales"],252:["Sauce dip maison","Coleslaw","Bière artisanale"],253:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],
+  254:["Salade verte","Jambon blanc","Vin blanc de Savoie"],255:["Riz thaï jasmin","Avocat tranché","Sauce cocktail maison"],256:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],257:["Riz basmati","Légumes rôtis","Pain maison"],258:["Sauce dip maison","Coleslaw","Bière artisanale"],259:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],
+  260:["Sauce dip maison","Coleslaw","Bière artisanale"],261:["Amuse-bouches salés","Olives marinées","Chips artisanales"],262:["Cidre brut","Compote maison","Salade verte"],263:["Viande en sauce","Poisson grillé","Œufs pochés"],264:["Viande en sauce","Poisson grillé","Œufs pochés"],265:["Viande en sauce","Poisson grillé","Œufs pochés"],
+  266:["Riz basmati","Légumes rôtis","Pain maison"],267:["Pâtes fraîches","Viande grillée","Légumes vapeur"],268:["Riz basmati","Légumes rôtis","Pain maison"],269:["Riz basmati","Légumes rôtis","Pain maison"],270:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],271:["Riz basmati","Légumes rôtis","Pain maison"],
+  272:["Glace vanille","Crème fouettée","Café ou thé"],273:["Glace vanille","Crème fouettée","Café ou thé"],274:["Glace vanille","Coulis de fruits rouges","Café espresso"],275:["Amuse-bouches salés","Olives marinées","Chips artisanales"],276:["Riz basmati","Légumes rôtis","Pain maison"],277:["Riz thaï jasmin","Avocat tranché","Sauce cocktail maison"],
+  278:["Guacamole","Pico de gallo","Bière mexicaine Corona"],279:["Guacamole","Pico de gallo","Bière mexicaine Corona"],280:["Pâtes fraîches","Viande grillée","Légumes vapeur"],281:["Pâtes fraîches","Viande grillée","Légumes vapeur"],282:["Viande en sauce","Poisson grillé","Œufs pochés"],283:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],
+  284:["Amuse-bouches salés","Olives marinées","Chips artisanales"],285:["Glace vanille","Crème fouettée","Café ou thé"],286:["Glace vanille","Crème fouettée","Café ou thé"],301:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],302:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],303:["Frites maison","Salade verte","Sauce béarnaise"],
+  304:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],305:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],306:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],307:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],308:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],309:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],
+  310:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],311:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],312:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],313:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],314:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],315:["Riz sauvage","Épinards sautés","Beurre blanc citronné"],
+  316:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],317:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],318:["Riz basmati","Pain naan","Raïta concombre-menthe"],319:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],320:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],321:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],
+  322:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],323:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],324:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],325:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],326:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],327:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],
+  328:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],329:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],330:["Riz pilaf","Haricots verts sautés","Vin blanc de Bourgogne"],331:["Riz basmati","Pain naan","Raïta concombre-menthe"],332:["Parmesan râpé","Pain à l'ail","Salade romaine"],333:["Sauce dip maison","Coleslaw","Bière artisanale"],
+  334:["Parmesan en copeaux","Vin blanc sec (Soave)","Roquette huile d'olive"],335:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],336:["Frites croustillantes","Coleslaw","Pickles maison"],337:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],338:["Riz basmati","Légumes rôtis","Pain maison"],339:["Salade verte","Jambon blanc","Vin blanc de Savoie"],
+  340:["Frites maison","Salade verte","Sauce béarnaise"],341:["Riz basmati","Légumes rôtis","Pain maison"],342:["Riz basmati","Légumes rôtis","Pain maison"],343:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],344:["Salade verte","Jambon blanc","Vin blanc de Savoie"],345:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],
+  346:["Riz basmati","Légumes rôtis","Pain maison"],347:["Cidre brut","Compote maison","Salade verte"],348:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],349:["Parmesan en copeaux","Vin blanc sec (Soave)","Roquette huile d'olive"],350:["Riz basmati","Légumes rôtis","Pain maison"],401:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],
+  402:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],403:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],404:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],405:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],406:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],407:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],
+  408:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],409:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],410:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],411:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],412:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],413:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],
+  414:["Parmesan râpé","Pain à l'ail","Salade romaine"],415:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],416:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],417:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],418:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],419:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],
+  420:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],421:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],422:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],423:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],424:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],425:["Salade verte vinaigrette","Cornichons","Vin blanc d'Alsace"],
+  426:["Viande en sauce","Poisson grillé","Œufs pochés"],427:["Salade verte","Jambon blanc","Vin blanc de Savoie"],428:["Rouleaux de printemps","Soupe miso","Thé vert japonais"],429:["Viande en sauce","Poisson grillé","Œufs pochés"],430:["Viande en sauce","Poisson grillé","Œufs pochés"],431:["Viande en sauce","Poisson grillé","Œufs pochés"],
+  432:["Viande en sauce","Poisson grillé","Œufs pochés"],433:["Viande en sauce","Poisson grillé","Œufs pochés"],434:["Viande en sauce","Poisson grillé","Œufs pochés"],435:["Viande en sauce","Poisson grillé","Œufs pochés"],436:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],437:["Riz basmati","Légumes rôtis","Pain maison"],
+  438:["Sauce dip maison","Coleslaw","Bière artisanale"],439:["Riz basmati","Légumes rôtis","Pain maison"],440:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],441:["Sauce dip maison","Coleslaw","Bière artisanale"],442:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],443:["Pain de campagne grillé","Vin blanc sec","Salade verte légère"],
+  444:["Riz basmati","Pain naan","Raïta concombre-menthe"],445:["Sauce dip maison","Coleslaw","Bière artisanale"],446:["Pain ciabatta","Vinaigrette moutarde-miel","Eau pétillante citronnée"],447:["Croûtons au four","Crème fraîche épaisse","Pain de seigle"],448:["Cidre brut","Compote maison","Salade verte"],449:["Viande en sauce","Poisson grillé","Œufs pochés"],
+  450:["Riz basmati","Légumes rôtis","Pain maison"]
+};
+
 // Niveaux de prix par portion : 1=€ (économique), 2=€€ (moyen), 3=€€€ (élevé)
 const PRICE_MAP = {
   1:1,2:3,3:1,4:1,5:1,6:1,7:1,8:1,9:3,10:1,
@@ -1165,8 +1273,8 @@ const VEG_SET = new Set([
   5,8,9,10,11,12,13,16,17,19,24,26,28,30,31,
   32,33,34,35,37,38,40,41,42,43,45,46,47,48,50,
   51,52,53,54,57,58,59,60,62,64,65,66,68,69,70,
-  71,72,83,85,88,89,90,94,95,99,102,103,104,105,110,
-  111,112,113,117,121,122,123,125,126,128,129,130,131,132,134,
+  71,72,83,85,88,89,90,94,95,99,102,103,104,105,
+  111,112,113,117,121,122,123,125,126,128,129,130,131,132,133,134,
   136,139,142,145,146,147,149,154,157,162,166,167,168,169,170,
   171,175,178,180,185,186,193,195,197,199,206,210,211,216,218,
   219,221,222,224,227,228,229,230,232,233,239,242,243,244,246,
@@ -1189,6 +1297,19 @@ function priceHtml(id) {
 // Retourne le badge végétarien si applicable
 function vegHtml(id) {
   return VEG_SET.has(id) ? `<span class="veg-badge">🥗 Végé</span>` : '';
+}
+
+// Retourne le HTML du bloc accompagnements pour une fiche recette
+function buildAccompagnement(id) {
+  const acc = ACCOMPAGNEMENTS[id];
+  if (!acc || !acc.length) return '';
+  const icons = ['🥗', '🍷', '🍞'];
+  return `<div class="accompagnement-block">
+    <div class="accompagnement-title">Se marie bien avec</div>
+    <div class="accompagnement-list">
+      ${acc.map((a, i) => `<span class="accompagnement-chip">${icons[i] || '•'} ${a}</span>`).join('')}
+    </div>
+  </div>`;
 }
 
 // ===================== FONCTIONS =====================
@@ -1800,6 +1921,7 @@ function showRecipe(recipeId) {
       <textarea class="notes-textarea" id="notes-${recipe.id}" placeholder="Vos astuces, variantes, retours d'expérience…" oninput="saveNote(${recipe.id}, this.value)">${noteText}</textarea>
       <div class="notes-saved" id="notes-saved-${recipe.id}">✓ Sauvegardé</div>
     </div>
+    ${buildAccompagnement(recipe.id)}
   `;
 }
 
@@ -1885,8 +2007,56 @@ window.onload = function() {
 // Fonctionne sur GitHub Pages, localhost, et tout autre hébergeur HTTPS.
 if ('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent')) {
   navigator.serviceWorker.register('./sw.js')
-    .then(function(reg) { console.log('[PWA] SW enregistré, scope :', reg.scope); })
+    .then(function(reg) {
+      console.log('[PWA] SW enregistré, scope :', reg.scope);
+
+      // ── Détection mise à jour ──────────────────────────────────────────
+      // Cas 1 : un nouveau SW est déjà en attente au chargement de la page
+      if (reg.waiting) {
+        showUpdateFab();
+      }
+
+      // Cas 2 : un nouveau SW vient de finir de s'installer pendant la session
+      reg.addEventListener('updatefound', function() {
+        var newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', function() {
+          // Le nouveau SW est installé et attend — on peut proposer la MAJ
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateFab();
+          }
+        });
+      });
+    })
     .catch(function(err) { console.warn('[PWA] SW échoué :', err); });
+
+  // Cas 3 : le SW envoie SW_WAITING après son installation (si l'onglet était déjà ouvert)
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'SW_WAITING') {
+      showUpdateFab();
+    }
+  });
+
+  // Recharger automatiquement quand le nouveau SW prend le contrôle
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    window.location.reload();
+  });
+}
+
+// Affiche le bouton flottant de mise à jour
+function showUpdateFab() {
+  var fab = document.getElementById('fab-update');
+  if (fab) fab.classList.add('visible');
+}
+
+// Déclenche la mise à jour : envoie SKIP_WAITING au SW en attente
+function applyUpdate() {
+  navigator.serviceWorker.getRegistration().then(function(reg) {
+    if (reg && reg.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      // controllerchange rechargera la page automatiquement
+    }
+  });
 }
 </script>
 
