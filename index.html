@@ -432,6 +432,49 @@
       background: #e08080; flex-shrink: 0;
     }
 
+    /* ---- FILTRES CATALOGUE (menus déroulants) ---- */
+    .filters-row {
+      display: flex; gap: 8px; margin-bottom: 14px;
+    }
+    .filter-select {
+      flex: 1; min-width: 0;
+      padding: 9px 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text);
+      cursor: pointer; outline: none; transition: border-color .2s;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239A92B0' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+    .filter-select:focus { border-color: var(--accent); }
+    .filter-select.active { border-color: var(--accent); color: var(--accent); }
+
+    /* ---- FAB RESET CATALOGUE ---- */
+    .fab-reset {
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      padding: 13px 20px; border-radius: 50px;
+      background: var(--text); color: var(--bg); border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      box-shadow: var(--shadow); display: flex; align-items: center; gap: 8px;
+      transition: opacity .25s, transform .25s, background .15s;
+      opacity: 0; pointer-events: none; transform: translateY(14px);
+    }
+    .fab-reset.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .fab-reset:hover { background: var(--accent); }
+    @media (max-width: 480px) { .fab-reset { bottom: 16px; right: 14px; padding: 11px 16px; font-size: 13px; } }
+
+    /* ---- BOUTON 🔍 DANS LA BARRE ---- */
+    .search-bar-go {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: var(--accent); border: none; cursor: pointer;
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; transition: background .15s;
+    }
+    .search-bar-go:hover { background: #b05525; }
+
     /* ---- PRIX & VÉGÉTARIEN ---- */
     .price-tag {
       display: inline-flex; align-items: center;
@@ -573,11 +616,43 @@
   </div>
   <div class="section-title">Catalogue</div>
   <p class="section-sub">Toutes les recettes classées par catégorie</p>
+
+  <!-- Barre de recherche texte avec bouton 🔍 -->
   <div class="search-bar-wrap">
     <span class="search-bar-icon">🔍</span>
-    <input class="search-bar-input" id="cat-search-input" type="text" placeholder="Rechercher dans le catalogue..." oninput="onCatSearch(this.value)" autocomplete="off">
+    <input class="search-bar-input" id="cat-search-input" type="text"
+      placeholder="Rechercher dans le catalogue..."
+      oninput="onCatSearch(this.value)"
+      onkeydown="if(event.key==='Enter') applyAllFilters()"
+      autocomplete="off" style="padding-right:78px">
     <button class="search-bar-clear" id="cat-search-clear" onclick="clearCatSearch()">✕</button>
+    <button class="search-bar-go" onclick="applyAllFilters()" title="Rechercher">🔎</button>
   </div>
+
+  <!-- Filtres en menus déroulants sur une seule ligne -->
+  <div class="filters-row">
+    <select class="filter-select" id="filter-diff-sel" onchange="setFilterSelect('diff', this)">
+      <option value="all">Difficulté</option>
+      <option value="facile">🟢 Facile</option>
+      <option value="moyen">🟡 Moyen</option>
+      <option value="difficile">🔴 Difficile</option>
+    </select>
+    <select class="filter-select" id="filter-price-sel" onchange="setFilterSelect('price', this)">
+      <option value="all">Prix</option>
+      <option value="1">€ Économique</option>
+      <option value="2">€€ Moyen</option>
+      <option value="3">€€€ Élevé</option>
+    </select>
+    <select class="filter-select" id="filter-time-sel" onchange="setFilterSelect('time', this)">
+      <option value="all">Temps</option>
+      <option value="15">≤ 15 min</option>
+      <option value="30">≤ 30 min</option>
+      <option value="45">≤ 45 min</option>
+      <option value="60">≤ 1 h</option>
+    </select>
+  </div>
+
+  <!-- Mode : Type de plat / Culture -->
   <div class="cat-mode-bar">
     <button class="cat-mode-btn active" id="mode-btn-cat" onclick="setCatMode('cat')">🍽 Type de plat</button>
     <button class="cat-mode-btn" id="mode-btn-origin" onclick="setCatMode('origin')">🌍 Culture</button>
@@ -585,6 +660,9 @@
   <div id="cat-tabs"></div>
   <div id="catalogue-results"></div>
 </div>
+
+<!-- FAB réinitialiser (catalogue seulement) -->
+<button class="fab-reset" id="fab-reset" onclick="resetAllFilters()">↑ Réinitialiser</button>
 
 <!-- RANDOM -->
 <div id="page-random" class="page">
@@ -1130,6 +1208,9 @@ function showPage(pageId) {
   if (pageId === 'search')    loadIngredientFamilies();
   if (pageId === 'catalogue') loadCatalogueTabs();
   if (pageId === 'random')    pickRandom();
+  // Masquer le FAB reset dès qu'on quitte le catalogue
+  const fabReset = document.getElementById('fab-reset');
+  if (fabReset) fabReset.classList.toggle('visible', false);
 }
 
 function goHome() {
@@ -1293,33 +1374,151 @@ function doSearch() {
 }
 
 // Mode de filtrage du catalogue : 'cat' ou 'origin'
-let catMode = 'cat';
+// ── CATALOGUE — état des filtres ──────────────────────────────────────────
+let catMode     = 'cat';   // 'cat' | 'origin'
+let catTabValue = 'all';   // valeur de l'onglet actif ('all', '__favs__', '__veg__', nom catégorie...)
+let filterDiff  = 'all';   // 'all' | 'facile' | 'moyen' | 'difficile'
+let filterPrice = 'all';   // 'all' | 1 | 2 | 3
+let filterTime  = 'all';   // 'all' | 15 | 30 | 45 | 60
 
+// Bascule mode Type de plat / Culture
 function setCatMode(mode) {
   catMode = mode;
+  catTabValue = 'all'; // reset onglet quand on change de mode
   document.getElementById('mode-btn-cat').classList.toggle('active', mode === 'cat');
   document.getElementById('mode-btn-origin').classList.toggle('active', mode === 'origin');
   loadCatalogueTabs();
 }
 
-// Chargement des onglets du catalogue
+// Mise à jour d'un filtre via menu déroulant
+function setFilterSelect(type, sel) {
+  const raw = sel.value;
+  const value = (type === 'price' || type === 'time') && raw !== 'all' ? Number(raw) : raw;
+  if (type === 'diff')  filterDiff  = value;
+  if (type === 'price') filterPrice = value;
+  if (type === 'time')  filterTime  = value;
+  // Colore le select si un filtre est actif
+  sel.classList.toggle('active', value !== 'all');
+  applyAllFilters();
+}
+
+// Construit et affiche les onglets de catégorie
 function loadCatalogueTabs() {
   const tabsContainer = document.getElementById('cat-tabs');
   const field = catMode === 'cat' ? 'cat' : 'origin';
   const uniqueValues = [...new Set(RECIPES.map(r => r[field]))].sort();
   const favCount = getFavorites().length;
 
-  tabsContainer.innerHTML = `
-    <div class="cat-tab" style="border-color:#e08080;color:#c05050" onclick="filterCatalogue('__favs__', this)">❤️ Favoris (${favCount})</div>
-    <div class="cat-tab active" onclick="filterCatalogue('all', this)">Toutes (${RECIPES.length})</div>
-    ${uniqueValues.map(val => `
-      <div class="cat-tab" onclick="filterCatalogue('${val.replace(/'/g, "\\'")}', this)">
-        ${val} (${RECIPES.filter(r => r[field] === val).length})
-      </div>
-    `).join('')}
-  `;
+  let html = `<div class="cat-tab" style="border-color:#e08080;color:#c05050" data-val="__favs__">❤️ Favoris (${favCount})</div>`;
+  if (catMode === 'cat') {
+    html += `<div class="cat-tab" style="border-color:#3a7a3a;color:#3a7a3a" data-val="__veg__">🥗 Végétarien (${VEG_SET.size})</div>`;
+  }
+  html += `<div class="cat-tab active" data-val="all">Toutes (${RECIPES.length})</div>`;
+  html += uniqueValues.map(val =>
+    `<div class="cat-tab" data-val="${val.replace(/"/g,'&quot;')}">${val} (${RECIPES.filter(r => r[field] === val).length})</div>`
+  ).join('');
+  tabsContainer.innerHTML = html;
 
+  // Délégation d'événement : un seul listener pour tous les onglets
+  tabsContainer.addEventListener('click', function(e) {
+    const tab = e.target.closest('.cat-tab');
+    if (!tab) return;
+    tabsContainer.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    catTabValue = tab.dataset.val;
+    applyAllFilters();
+  });
+
+  applyAllFilters();
+}
+
+// ── Fonction centrale : applique TOUS les filtres actifs ──────────────────
+// Ordre : onglet → recherche texte → difficulté → prix → temps
+function applyAllFilters() {
+  const query = document.getElementById('cat-search-input').value.trim().toLowerCase();
+
+  // 1. Filtre par onglet
+  let pool;
+  if (catTabValue === '__favs__') {
+    const favIds = getFavorites();
+    pool = RECIPES.filter(r => favIds.includes(r.id));
+  } else if (catTabValue === '__veg__') {
+    pool = RECIPES.filter(r => VEG_SET.has(r.id));
+  } else if (catTabValue === 'all') {
+    pool = RECIPES.slice();
+  } else {
+    const field = catMode === 'cat' ? 'cat' : 'origin';
+    pool = RECIPES.filter(r => r[field] === catTabValue);
+  }
+
+  // 2. Recherche texte partielle (titre, tags, catégorie, origine)
+  if (query) {
+    pool = pool.filter(r =>
+      r.title.toLowerCase().includes(query) ||
+      r.tags.some(t => t.toLowerCase().includes(query)) ||
+      r.cat.toLowerCase().includes(query) ||
+      r.origin.toLowerCase().includes(query)
+    );
+  }
+
+  // 3. Difficulté
+  if (filterDiff !== 'all') {
+    pool = pool.filter(r => r.diff === filterDiff);
+  }
+
+  // 4. Prix
+  if (filterPrice !== 'all') {
+    pool = pool.filter(r => (PRICE_MAP[r.id] || 1) === filterPrice);
+  }
+
+  // 5. Temps total
+  if (filterTime !== 'all') {
+    pool = pool.filter(r => (r.prep + r.cook) <= filterTime);
+  }
+
+  // Afficher le FAB reset si au moins un filtre ou recherche actif
+  const hasActiveFilter = query || filterDiff !== 'all' || filterPrice !== 'all' || filterTime !== 'all' || catTabValue !== 'all';
+  document.getElementById('fab-reset').classList.toggle('visible', hasActiveFilter);
+
+  if (pool.length === 0) {
+    document.getElementById('catalogue-results').innerHTML =
+      `<div class="empty-state"><div class="big">🔍</div><p>Aucune recette ne correspond à ces filtres.</p></div>`;
+    return;
+  }
+
+  renderCatalogueGrid(shuffle(pool));
+  if (query || catTabValue !== 'all') {
+    document.getElementById('catalogue-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Réinitialise TOUS les filtres et remonte en haut
+function resetAllFilters() {
+  // Reset variables
+  catTabValue = 'all';
+  filterDiff  = 'all';
+  filterPrice = 'all';
+  filterTime  = 'all';
+
+  // Reset UI : barre de recherche
+  document.getElementById('cat-search-input').value = '';
+  document.getElementById('cat-search-clear').style.display = 'none';
+
+  // Reset selects
+  ['filter-diff-sel','filter-price-sel','filter-time-sel'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel) { sel.value = 'all'; sel.classList.remove('active'); }
+  });
+
+  // Reset onglet : remettre "Toutes" actif
+  document.querySelectorAll('#cat-tabs .cat-tab').forEach((t, i) => {
+    // L'onglet "Toutes" est le 3ème (après Favoris et éventuellement Végé)
+    t.classList.toggle('active', t.dataset.val === 'all');
+  });
+
+  document.getElementById('fab-reset').classList.remove('visible');
   renderCatalogueGrid(shuffle(RECIPES.slice()));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderCatalogueGrid(recipes) {
@@ -1349,63 +1548,28 @@ function renderCatalogueGrid(recipes) {
     </div>`;
 }
 
-// Filtre du catalogue par catégorie, origine ou favoris
+// Filtre du catalogue — conservé pour compatibilité (délégation dans loadCatalogueTabs)
 function filterCatalogue(value, tabEl) {
-  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-  tabEl.classList.add('active');
-
-  let filtered;
-  if (value === '__favs__') {
-    const favIds = getFavorites();
-    filtered = RECIPES.filter(r => favIds.includes(r.id));
-  } else {
-    const field = catMode === 'cat' ? 'cat' : 'origin';
-    filtered = value === 'all' ? RECIPES.slice() : RECIPES.filter(r => r[field] === value);
-  }
-
-  renderCatalogueGrid(shuffle(filtered));
-  document.getElementById('catalogue-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  catTabValue = value;
+  applyAllFilters();
 }
 
-// Recherche dans le catalogue
+// Recherche texte : affiche/masque ✕, pas de rendu immédiat (attendre 🔎 ou Entrée)
 function onCatSearch(query) {
-  const clearBtn = document.getElementById('cat-search-clear');
-  clearBtn.style.display = query.length > 0 ? 'block' : 'none';
-
-  const filtered = RECIPES.filter(recipe =>
-    recipe.title.toLowerCase().includes(query.toLowerCase()) ||
-    recipe.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase()))
-  );
-
-  const container = document.getElementById('catalogue-results');
-  container.innerHTML = `
-    <div class="results-grid">
-      ${filtered.map(recipe => `
-        <div class="recipe-card" onclick="showRecipe(${recipe.id})">
-          <div class="recipe-card-img">${recipe.emoji}</div>
-          <div class="recipe-card-body">
-            <div class="recipe-card-title">${recipe.title}</div>
-            <div class="recipe-card-meta">
-              <span>🕒 ${recipe.prep + recipe.cook} min</span>
-              <span>🍽 ${recipe.portions} pers.</span>
-            </div>
-            <div class="recipe-card-tags">
-              <span class="tag diff-${recipe.diff}">${recipe.diff}</span>
-              ${priceHtml(recipe.id)}
-              ${vegHtml(recipe.id)}
-            </div>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  document.getElementById('cat-search-clear').style.display = query.length > 0 ? 'block' : 'none';
 }
 
-// Effacer la recherche et revenir au catalogue normal
+// Vide la barre de recherche et recharge le catalogue
 function clearCatSearch() {
   document.getElementById('cat-search-input').value = '';
   document.getElementById('cat-search-clear').style.display = 'none';
-  loadCatalogueTabs(); // Recharge les onglets et affiche "Toutes" sans crash
+  applyAllFilters();
+}
+
+// Affiche/masque le FAB reset selon la page active
+function updateFabReset(pageId) {
+  const fab = document.getElementById('fab-reset');
+  if (fab) fab.classList.toggle('visible', false); // toujours masqué au changement de page
 }
 
 // ── PAGE RANDOM : salé / sucré ─────────────────────────────────────────
