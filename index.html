@@ -722,7 +722,7 @@
 <!-- RECIPE PAGE -->
 <div id="page-recipe" class="page">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-    <button class="back-btn" id="recipe-back-btn" onclick="goBack()" style="margin:0;">← Retour</button>
+    <button class="back-btn" onclick="goBack()" style="margin:0;">← Retour</button>
     <button class="btn-lexique" onclick="openLexique()">💡 Lexique</button>
   </div>
   <div id="recipe-content"></div>
@@ -1303,11 +1303,10 @@ function vegHtml(id) {
 function buildAccompagnement(id) {
   const acc = ACCOMPAGNEMENTS[id];
   if (!acc || !acc.length) return '';
-  const icons = ['🥗', '🍷', '🍞'];
   return `<div class="accompagnement-block">
     <div class="accompagnement-title">Se marie bien avec</div>
     <div class="accompagnement-list">
-      ${acc.map((a, i) => `<span class="accompagnement-chip">${icons[i] || '•'} ${a}</span>`).join('')}
+      ${acc.map(a => `<span class="accompagnement-chip">${a}</span>`).join('')}
     </div>
   </div>`;
 }
@@ -1916,12 +1915,13 @@ function showRecipe(recipeId) {
       </div>
     </div>
 
+    ${buildAccompagnement(recipe.id)}
+
     <div class="recipe-notes-section">
       <div class="recipe-section-title">📝 MES NOTES</div>
       <textarea class="notes-textarea" id="notes-${recipe.id}" placeholder="Vos astuces, variantes, retours d'expérience…" oninput="saveNote(${recipe.id}, this.value)">${noteText}</textarea>
       <div class="notes-saved" id="notes-saved-${recipe.id}">✓ Sauvegardé</div>
     </div>
-    ${buildAccompagnement(recipe.id)}
   `;
 }
 
