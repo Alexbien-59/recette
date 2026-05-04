@@ -589,9 +589,9 @@
 <nav class="topbar">
   <div class="topbar-logo" onclick="goHome()">Ma<span>Recette</span></div>
   <div class="topbar-nav">
-    <button class="nav-btn" onclick="showPage('search')">🔍<span class="nav-label"> Ingrédients</span></button>
-    <button class="nav-btn" onclick="showPage('catalogue')">📚<span class="nav-label"> Catalogue</span></button>
-    <button class="nav-btn" onclick="showPage('random')">🎲<span class="nav-label"> Hasard</span></button>
+    <button class="nav-btn" onclick="navigateTo('search')">🔍<span class="nav-label"> Ingrédients</span></button>
+    <button class="nav-btn" onclick="navigateTo('catalogue')">📚<span class="nav-label"> Catalogue</span></button>
+    <button class="nav-btn" onclick="navigateTo('random')">🎲<span class="nav-label"> Hasard</span></button>
   </div>
 </nav>
 
@@ -609,17 +609,17 @@
     <h1>Cuisinez avec ce que<br>vous avez <em>déjà</em></h1>
     <p>Trouvez des recettes à partir de vos ingrédients, explorez le catalogue ou laissez-vous surprendre.</p>
     <div class="hero-btns">
-      <div class="hero-card" onclick="showPage('search')">
+      <div class="hero-card" onclick="navigateTo('search')">
         <div class="icon">🥕</div>
         <h3>Recherche par ingrédients</h3>
         <p>Sélectionnez ce que vous avez, obtenez des recettes compatibles</p>
       </div>
-      <div class="hero-card" onclick="showPage('catalogue')">
+      <div class="hero-card" onclick="navigateTo('catalogue')">
         <div class="icon">📖</div>
         <h3>Catalogue de recettes</h3>
         <p>Parcourez toutes les recettes classées par catégorie</p>
       </div>
-      <div class="hero-card" onclick="showPage('random')">
+      <div class="hero-card" onclick="navigateTo('random')">
         <div class="icon">🎲</div>
         <h3>Recette aléatoire</h3>
         <p>Laissez-vous inspirer par une recette tirée au hasard</p>
@@ -1314,10 +1314,13 @@ function buildAccompagnement(id) {
 // ===================== FONCTIONS =====================
 
 // ── Navigation avec pile de pages ──────────────────────────────────────
-// pageStack permet de revenir à la page précédente depuis n'importe quelle page
-// (lexique, recette, etc.) sans avoir à coder le contexte en dur.
+// ── Navigation ─────────────────────────────────────────────────────────
+// pageStack = pile des pages visitées. Ex : ['home','catalogue','recipe']
+// navigateTo() est le seul point d'entrée pour les transitions utilisateur.
+// showPage() est réservé au rendu interne (goBack, goHome).
 let pageStack = ['home'];
 
+// Rendu d'une page sans modifier la pile (usage interne uniquement)
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(`page-${pageId}`);
@@ -1333,28 +1336,34 @@ function showPage(pageId) {
   if (fabReset) fabReset.classList.toggle('visible', false);
 }
 
+// Navigation utilisateur : empile la page et affiche
+function navigateTo(pageId) {
+  // Ne pas empiler si on est déjà sur cette page
+  if (pageStack[pageStack.length - 1] === pageId) {
+    showPage(pageId);
+    return;
+  }
+  pageStack.push(pageId);
+  showPage(pageId);
+}
+
+// Retour à la page précédente
+function goBack() {
+  if (pageStack.length > 1) {
+    pageStack.pop(); // retire la page courante
+  }
+  const prev = pageStack[pageStack.length - 1] || 'home';
+  showPage(prev);
+}
+
+// Retour à l'accueil (remet la pile à zéro)
 function goHome() {
   pageStack = ['home'];
   showPage('home');
 }
 
-// Retour à la page précédente dans la pile
-function goBack() {
-  pageStack.pop(); // retire la page courante
-  const prev = pageStack.length > 0 ? pageStack[pageStack.length - 1] : 'home';
-  showPage(prev);
-}
-
-// Navigue vers une nouvelle page en empilant la page courante
-function navigateTo(pageId) {
-  const current = pageStack[pageStack.length - 1];
-  if (current !== pageId) pageStack.push(pageId);
-  showPage(pageId);
-}
-
-// Ouvre le lexique en mémorisant la page courante pour pouvoir y revenir
+// Ouvre le lexique en mémorisant la page courante
 function openLexique() {
-  // Initialise le lexique à son premier onglet
   currentLexTab = 'techniques';
   currentLexQuery = '';
   document.getElementById('lex-search').value = '';
@@ -1365,7 +1374,7 @@ function openLexique() {
   renderLexique();
 }
 
-// Ferme le lexique et revient à la page précédente
+// Ferme le lexique : retour à la page précédente
 function closeLexique() {
   goBack();
 }
