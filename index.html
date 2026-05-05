@@ -482,6 +482,110 @@
     .fab-reset:hover { background: var(--accent); }
     @media (max-width: 480px) { .fab-reset { bottom: 16px; right: 14px; padding: 11px 16px; font-size: 13px; } }
 
+    /* Accompagnement et profil gustatif masquables via préférences */
+    .accompagnement-block { display: var(--accomp-display, block); }
+    .taste-profile { display: var(--taste-display, block); }
+
+    /* ---- BOUTON PRÉFÉRENCES ---- */
+    .fab-prefs {
+      position: fixed; bottom: 24px; left: 24px; z-index: 200;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      cursor: pointer; font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow);
+      transition: opacity .25s, transform .25s, background .15s;
+      opacity: 0; pointer-events: none; transform: translateY(10px);
+    }
+    .fab-prefs.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .fab-prefs:hover { background: var(--surface2); border-color: var(--accent); }
+    @media (max-width: 480px) { .fab-prefs { bottom: 16px; left: 14px; } }
+
+    /* ---- PANNEAU PRÉFÉRENCES ---- */
+    .prefs-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 400; opacity: 0; pointer-events: none;
+      transition: opacity .25s;
+    }
+    .prefs-overlay.open { opacity: 1; pointer-events: auto; }
+    .prefs-panel {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 401;
+      background: var(--surface); border-radius: 20px 20px 0 0;
+      padding: 20px 20px 32px;
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      max-height: 80vh; overflow-y: auto;
+    }
+    .prefs-overlay.open .prefs-panel { transform: translateY(0); }
+    .prefs-handle {
+      width: 40px; height: 4px; border-radius: 2px;
+      background: var(--border); margin: 0 auto 18px;
+    }
+    .prefs-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .prefs-title { font-size: 17px; font-weight: 500; color: var(--text); }
+    .prefs-close {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--surface2); border: none; cursor: pointer;
+      font-size: 16px; color: var(--text2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .prefs-tabs { display: flex; gap: 6px; margin-bottom: 24px; }
+    .prefs-tab {
+      flex: 1; padding: 8px 6px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+      color: var(--text2); cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .prefs-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .prefs-section { display: none; }
+    .prefs-section.active { display: block; }
+    .prefs-row {
+      margin-bottom: 22px;
+    }
+    .prefs-label {
+      font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--text3); font-weight: 500; margin-bottom: 10px;
+    }
+    .prefs-options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .prefs-option {
+      flex: 1; min-width: 60px; padding: 9px 8px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface2);
+      font-family: 'DM Sans', sans-serif; font-size: 13px;
+      color: var(--text2); cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .prefs-option:hover { border-color: var(--accent); color: var(--accent); }
+    .prefs-option.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .prefs-toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .prefs-toggle-label { font-size: 14px; color: var(--text); }
+    .prefs-toggle-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .toggle-switch {
+      width: 44px; height: 26px; border-radius: 13px;
+      background: var(--border); border: none; cursor: pointer;
+      position: relative; transition: background .2s; flex-shrink: 0;
+    }
+    .toggle-switch::after {
+      content: ''; position: absolute;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: white; top: 3px; left: 3px;
+      transition: left .2s;
+    }
+    .toggle-switch.on { background: var(--accent); }
+    .toggle-switch.on::after { left: 21px; }
+    .prefs-about-line {
+      display: flex; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+      font-size: 14px; color: var(--text2);
+    }
+    .prefs-about-line:last-child { border-bottom: none; }
+    .prefs-about-line span:first-child { color: var(--text3); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+    .prefs-about-val { color: var(--text); font-weight: 500; }
+
     /* ---- BOUTON 🔍 DANS LA BARRE ---- */
     .search-bar-go {
       position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
@@ -699,6 +803,111 @@
 </div>
 
 <!-- FAB mise à jour PWA -->
+<button class="fab-prefs" id="fab-prefs" onclick="openPrefs()" title="Préférences">⚙️</button>
+
+<!-- PANNEAU PRÉFÉRENCES -->
+<div class="prefs-overlay" id="prefs-overlay" onclick="closePrefsOnOverlay(event)">
+  <div class="prefs-panel" id="prefs-panel">
+    <div class="prefs-handle"></div>
+    <div class="prefs-header">
+      <span class="prefs-title">⚙️ Préférences</span>
+      <button class="prefs-close" onclick="closePrefs()">✕</button>
+    </div>
+    <div class="prefs-tabs">
+      <button class="prefs-tab active" onclick="setPrefTab('affichage',this)">🖥 Affichage</button>
+      <button class="prefs-tab" onclick="setPrefTab('catalogue',this)">📚 Catalogue</button>
+      <button class="prefs-tab" onclick="setPrefTab('about',this)">ℹ️ À propos</button>
+    </div>
+
+    <!-- Onglet Affichage -->
+    <div class="prefs-section active" id="prefs-affichage">
+      <div class="prefs-row">
+        <div class="prefs-label">Taille de police</div>
+        <div class="prefs-options">
+          <button class="prefs-option" data-font="14" onclick="setFontSize(14,this)">Petit</button>
+          <button class="prefs-option active" data-font="16" onclick="setFontSize(16,this)">Moyen</button>
+          <button class="prefs-option" data-font="18" onclick="setFontSize(18,this)">Grand</button>
+          <button class="prefs-option" data-font="20" onclick="setFontSize(20,this)">Très grand</button>
+        </div>
+      </div>
+      <div class="prefs-row">
+        <div class="prefs-label">Thème</div>
+        <div class="prefs-options">
+          <button class="prefs-option active" data-theme="light" onclick="setTheme('light',this)">☀️ Clair</button>
+          <button class="prefs-option" data-theme="dark" onclick="setTheme('dark',this)">🌙 Sombre</button>
+        </div>
+      </div>
+      <div class="prefs-toggle-row">
+        <div>
+          <div class="prefs-toggle-label">Afficher les accompagnements</div>
+          <div class="prefs-toggle-sub">Suggestions sous chaque recette</div>
+        </div>
+        <button class="toggle-switch on" id="toggle-accomp" onclick="togglePref('accomp',this)"></button>
+      </div>
+      <div class="prefs-toggle-row">
+        <div>
+          <div class="prefs-toggle-label">Afficher le profil gustatif</div>
+          <div class="prefs-toggle-sub">Barres sucrosité / amertume / alcool</div>
+        </div>
+        <button class="toggle-switch on" id="toggle-taste" onclick="togglePref('taste',this)"></button>
+      </div>
+    </div>
+
+    <!-- Onglet Catalogue -->
+    <div class="prefs-section" id="prefs-catalogue">
+      <div class="prefs-row">
+        <div class="prefs-label">Mode d'affichage par défaut</div>
+        <div class="prefs-options">
+          <button class="prefs-option active" data-catmode="cat" onclick="setPrefCatMode('cat',this)">🍽 Type de plat</button>
+          <button class="prefs-option" data-catmode="origin" onclick="setPrefCatMode('origin',this)">🌍 Culture</button>
+        </div>
+      </div>
+      <div class="prefs-row">
+        <div class="prefs-label">Filtre végétarien par défaut</div>
+        <div class="prefs-options">
+          <button class="prefs-option active" data-veg="all" onclick="setPrefVeg('all',this)">Toutes les recettes</button>
+          <button class="prefs-option" data-veg="veg" onclick="setPrefVeg('veg',this)">🥗 Végétarien</button>
+        </div>
+      </div>
+      <div class="prefs-toggle-row">
+        <div>
+          <div class="prefs-toggle-label">Ordre aléatoire</div>
+          <div class="prefs-toggle-sub">Mélanger les recettes à chaque ouverture</div>
+        </div>
+        <button class="toggle-switch on" id="toggle-shuffle" onclick="togglePref('shuffle',this)"></button>
+      </div>
+    </div>
+
+    <!-- Onglet À propos -->
+    <div class="prefs-section" id="prefs-about">
+      <div class="prefs-about-line">
+        <span>Application</span>
+        <span class="prefs-about-val">MaRecette</span>
+      </div>
+      <div class="prefs-about-line">
+        <span>Version</span>
+        <span class="prefs-about-val">1.0.0</span>
+      </div>
+      <div class="prefs-about-line">
+        <span>Recettes</span>
+        <span class="prefs-about-val" id="about-recipe-count">—</span>
+      </div>
+      <div class="prefs-about-line">
+        <span>Favoris</span>
+        <span class="prefs-about-val" id="about-fav-count">—</span>
+      </div>
+      <div class="prefs-about-line">
+        <span>Notes sauvegardées</span>
+        <span class="prefs-about-val" id="about-notes-count">—</span>
+      </div>
+      <div class="prefs-about-line">
+        <span>Source</span>
+        <span class="prefs-about-val"><a href="https://github.com/Alexbien-59/marecette" target="_blank" style="color:var(--accent)">GitHub</a></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <button class="fab-update" id="fab-update" onclick="applyUpdate()">🔄 Mettre à jour</button>
 
 <!-- FAB réinitialiser (catalogue seulement) -->
@@ -1327,6 +1536,9 @@ function showPage(pageId) {
   if (!target) return;
   target.classList.add('active');
   document.getElementById('fab-search').classList.toggle('visible', pageId === 'search');
+  // Bouton ⚙️ visible uniquement sur l'accueil
+  const fabPrefs = document.getElementById('fab-prefs');
+  if (fabPrefs) fabPrefs.classList.toggle('visible', pageId === 'home');
   window.scrollTo(0, 0);
   if (pageId === 'search')    loadIngredientFamilies();
   if (pageId === 'catalogue') loadCatalogueTabs();
@@ -1999,8 +2211,178 @@ function saveNote(id, text) {
   }
 }
 
+// ===================== PRÉFÉRENCES =====================
+
+// Valeurs par défaut des préférences
+const PREFS_DEFAULT = {
+  fontSize: 16,
+  theme: 'light',
+  accomp: true,
+  taste: true,
+  catMode: 'cat',
+  vegDefault: 'all',
+  shuffle: true,
+};
+
+// Charger les préférences depuis localStorage
+function loadPrefs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('marecette_prefs') || '{}');
+    return Object.assign({}, PREFS_DEFAULT, saved);
+  } catch(e) { return Object.assign({}, PREFS_DEFAULT); }
+}
+
+function savePrefs(prefs) {
+  localStorage.setItem('marecette_prefs', JSON.stringify(prefs));
+}
+
+// Appliquer toutes les préférences au démarrage
+function applyPrefs() {
+  const p = loadPrefs();
+
+  // Taille de police
+  document.documentElement.style.setProperty('--font-base', p.fontSize + 'px');
+  document.body.style.fontSize = p.fontSize + 'px';
+
+  // Thème
+  applyTheme(p.theme);
+
+  // Accompagnements
+  document.documentElement.style.setProperty('--accomp-display', p.accomp ? 'block' : 'none');
+
+  // Profil gustatif
+  document.documentElement.style.setProperty('--taste-display', p.taste ? 'block' : 'none');
+
+  // Mettre à jour les boutons actifs dans le panneau
+  syncPrefUI(p);
+}
+
+// Synchronise l'UI du panneau avec les valeurs sauvegardées
+function syncPrefUI(p) {
+  // Taille de police
+  document.querySelectorAll('[data-font]').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.font) === p.fontSize);
+  });
+  // Thème
+  document.querySelectorAll('[data-theme]').forEach(b => {
+    b.classList.toggle('active', b.dataset.theme === p.theme);
+  });
+  // Accompagnements
+  const ta = document.getElementById('toggle-accomp');
+  if (ta) ta.classList.toggle('on', p.accomp);
+  // Profil gustatif
+  const tt = document.getElementById('toggle-taste');
+  if (tt) tt.classList.toggle('on', p.taste);
+  // Mode catalogue
+  document.querySelectorAll('[data-catmode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.catmode === p.catMode);
+  });
+  // Végétarien par défaut
+  document.querySelectorAll('[data-veg]').forEach(b => {
+    b.classList.toggle('active', b.dataset.veg === p.vegDefault);
+  });
+  // Shuffle
+  const ts = document.getElementById('toggle-shuffle');
+  if (ts) ts.classList.toggle('on', p.shuffle);
+}
+
+// Ouvrir / fermer le panneau
+function openPrefs() {
+  const overlay = document.getElementById('prefs-overlay');
+  overlay.classList.add('open');
+  syncPrefUI(loadPrefs());
+  // Remplir les stats "À propos"
+  document.getElementById('about-recipe-count').textContent = RECIPES.length + ' recettes';
+  const favs = getFavorites();
+  document.getElementById('about-fav-count').textContent = favs.length + ' recette' + (favs.length > 1 ? 's' : '');
+  const notes = Object.keys(localStorage).filter(k => k.startsWith('marecette_note_')).length;
+  document.getElementById('about-notes-count').textContent = notes + ' note' + (notes > 1 ? 's' : '');
+}
+
+function closePrefs() {
+  document.getElementById('prefs-overlay').classList.remove('open');
+}
+
+function closePrefsOnOverlay(e) {
+  // Fermer seulement si clic sur le fond et pas sur le panneau
+  if (e.target === document.getElementById('prefs-overlay')) closePrefs();
+}
+
+function setPrefTab(tab, el) {
+  document.querySelectorAll('.prefs-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.prefs-section').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('prefs-' + tab).classList.add('active');
+}
+
+// Actions sur chaque préférence
+function setFontSize(size, el) {
+  const p = loadPrefs();
+  p.fontSize = size;
+  savePrefs(p);
+  document.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.font) === size));
+  document.body.style.fontSize = size + 'px';
+}
+
+function setTheme(theme, el) {
+  const p = loadPrefs();
+  p.theme = theme;
+  savePrefs(p);
+  document.querySelectorAll('[data-theme]').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+  applyTheme(theme);
+}
+
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.documentElement.style.setProperty('--bg', '#F0EAE0');
+    document.documentElement.style.setProperty('--surface', '#FFFFFF');
+    document.documentElement.style.setProperty('--surface2', '#F5F0E8');
+    document.documentElement.style.setProperty('--text', '#2C2416');
+    document.documentElement.style.setProperty('--text2', '#6B5D4F');
+    document.documentElement.style.setProperty('--text3', '#A89880');
+    document.documentElement.style.setProperty('--border', '#E0D5C5');
+  } else {
+    // Remettre les valeurs par défaut
+    document.documentElement.style.setProperty('--bg', '#FDFAF5');
+    document.documentElement.style.setProperty('--surface', '#FFFFFF');
+    document.documentElement.style.setProperty('--surface2', '#F5F0E8');
+    document.documentElement.style.setProperty('--text', '#2C2416');
+    document.documentElement.style.setProperty('--text2', '#6B5D4F');
+    document.documentElement.style.setProperty('--text3', '#A89880');
+    document.documentElement.style.setProperty('--border', '#E8E0D0');
+  }
+}
+
+function togglePref(key, btn) {
+  const p = loadPrefs();
+  p[key] = !p[key];
+  savePrefs(p);
+  btn.classList.toggle('on', p[key]);
+  if (key === 'accomp') {
+    document.documentElement.style.setProperty('--accomp-display', p.accomp ? 'block' : 'none');
+  }
+  if (key === 'taste') {
+    document.documentElement.style.setProperty('--taste-display', p.taste ? 'block' : 'none');
+  }
+}
+
+function setPrefCatMode(mode, el) {
+  const p = loadPrefs();
+  p.catMode = mode;
+  savePrefs(p);
+  document.querySelectorAll('[data-catmode]').forEach(b => b.classList.toggle('active', b.dataset.catmode === mode));
+}
+
+function setPrefVeg(val, el) {
+  const p = loadPrefs();
+  p.vegDefault = val;
+  savePrefs(p);
+  document.querySelectorAll('[data-veg]').forEach(b => b.classList.toggle('active', b.dataset.veg === val));
+}
+
 // Initialisation au chargement
 window.onload = function() {
+  applyPrefs(); // Appliquer les préférences sauvegardées
   showPage('home');
 
   // Bouton retour en haut
