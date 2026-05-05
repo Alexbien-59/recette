@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   MaRecette — Service Worker v5
+   MaRecette — Service Worker v6
    ────────────────────────────────────────────────────────────────────────
    Stratégie : Cache First + notification de mise à jour.
 
@@ -15,7 +15,7 @@
    Pour déclencher une mise à jour : il suffit de changer CACHE_VERSION.
    ════════════════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'marecette-v5';
+const CACHE_VERSION = 'marecette-v6';
 
 function getAssets() {
   const base = self.registration.scope;
