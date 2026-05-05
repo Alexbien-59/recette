@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   MaRecette — Service Worker v1.0.0
+   MaRecette — Service Worker v3
    ────────────────────────────────────────────────────────────────────────
    Stratégie : Cache First + notification de mise à jour.
 
@@ -15,7 +15,7 @@
    Pour déclencher une mise à jour : il suffit de changer CACHE_VERSION.
    ════════════════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'marecette-v1.0.0';
+const CACHE_VERSION = 'marecette-v3';
 
 function getAssets() {
   const base = self.registration.scope;
@@ -72,9 +72,14 @@ self.addEventListener('activate', function(event) {
 /* ── Messages reçus de l'app ──────────────────────────────────────────── */
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    /* L'utilisateur a cliqué sur "Mettre à jour" — on prend le contrôle */
     console.log('[SW] skipWaiting() déclenché par l\'utilisateur');
     self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'GET_VERSION') {
+    // Répond avec la version sur le port fourni par MessageChannel
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ version: CACHE_VERSION });
+    }
   }
 });
 

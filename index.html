@@ -42,6 +42,7 @@
       --hard: #B85050;
       --radius: 14px;
       --shadow: 0 4px 24px rgba(26,18,8,0.08);
+      --font-base: 15px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -51,7 +52,7 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      font-size: 15px;
+      font-size: var(--font-base);
       line-height: 1.6;
     }
 
@@ -839,13 +840,6 @@
       </div>
       <div class="prefs-toggle-row">
         <div>
-          <div class="prefs-toggle-label">Afficher les accompagnements</div>
-          <div class="prefs-toggle-sub">Suggestions sous chaque recette</div>
-        </div>
-        <button class="toggle-switch on" id="toggle-accomp" onclick="togglePref('accomp',this)"></button>
-      </div>
-      <div class="prefs-toggle-row">
-        <div>
           <div class="prefs-toggle-label">Afficher le profil gustatif</div>
           <div class="prefs-toggle-sub">Barres sucrosité / amertume / alcool</div>
         </div>
@@ -886,7 +880,7 @@
       </div>
       <div class="prefs-about-line">
         <span>Version</span>
-        <span class="prefs-about-val">1.0.0</span>
+        <span class="prefs-about-val" id="about-version">—</span>
       </div>
       <div class="prefs-about-line">
         <span>Recettes</span>
@@ -2239,64 +2233,65 @@ function savePrefs(prefs) {
 // Appliquer toutes les préférences au démarrage
 function applyPrefs() {
   const p = loadPrefs();
-
-  // Taille de police
+  // Taille de police via CSS custom property — propagée à tout le document
   document.documentElement.style.setProperty('--font-base', p.fontSize + 'px');
-  document.body.style.fontSize = p.fontSize + 'px';
-
   // Thème
   applyTheme(p.theme);
-
-  // Accompagnements
-  document.documentElement.style.setProperty('--accomp-display', p.accomp ? 'block' : 'none');
-
   // Profil gustatif
   document.documentElement.style.setProperty('--taste-display', p.taste ? 'block' : 'none');
-
-  // Mettre à jour les boutons actifs dans le panneau
-  syncPrefUI(p);
+  // Mode catalogue par défaut
+  if (p.catMode) catMode = p.catMode;
 }
 
 // Synchronise l'UI du panneau avec les valeurs sauvegardées
 function syncPrefUI(p) {
-  // Taille de police
   document.querySelectorAll('[data-font]').forEach(b => {
     b.classList.toggle('active', parseInt(b.dataset.font) === p.fontSize);
   });
-  // Thème
   document.querySelectorAll('[data-theme]').forEach(b => {
     b.classList.toggle('active', b.dataset.theme === p.theme);
   });
-  // Accompagnements
-  const ta = document.getElementById('toggle-accomp');
-  if (ta) ta.classList.toggle('on', p.accomp);
-  // Profil gustatif
   const tt = document.getElementById('toggle-taste');
   if (tt) tt.classList.toggle('on', p.taste);
-  // Mode catalogue
   document.querySelectorAll('[data-catmode]').forEach(b => {
     b.classList.toggle('active', b.dataset.catmode === p.catMode);
   });
-  // Végétarien par défaut
   document.querySelectorAll('[data-veg]').forEach(b => {
     b.classList.toggle('active', b.dataset.veg === p.vegDefault);
   });
-  // Shuffle
   const ts = document.getElementById('toggle-shuffle');
   if (ts) ts.classList.toggle('on', p.shuffle);
 }
 
-// Ouvrir / fermer le panneau
+// Ouvrir le panneau et remplir les stats
 function openPrefs() {
   const overlay = document.getElementById('prefs-overlay');
   overlay.classList.add('open');
   syncPrefUI(loadPrefs());
-  // Remplir les stats "À propos"
+  // Statistiques
   document.getElementById('about-recipe-count').textContent = RECIPES.length + ' recettes';
   const favs = getFavorites();
-  document.getElementById('about-fav-count').textContent = favs.length + ' recette' + (favs.length > 1 ? 's' : '');
+  document.getElementById('about-fav-count').textContent = favs.length + ' recette' + (favs.length !== 1 ? 's' : '');
   const notes = Object.keys(localStorage).filter(k => k.startsWith('marecette_note_')).length;
-  document.getElementById('about-notes-count').textContent = notes + ' note' + (notes > 1 ? 's' : '');
+  document.getElementById('about-notes-count').textContent = notes + ' note' + (notes !== 1 ? 's' : '');
+  // Version depuis le service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(function(reg) {
+      const sw = reg && (reg.active || reg.installing || reg.waiting);
+      // Le SW expose sa version via postMessage
+      if (sw) {
+        const mc = new MessageChannel();
+        mc.port1.onmessage = function(e) {
+          if (e.data && e.data.version) {
+            // Extraire le numéro : 'marecette-v1.2.3' → '1.2.3'
+            const v = e.data.version.replace(/^[^0-9]*/, '');
+            document.getElementById('about-version').textContent = v || e.data.version;
+          }
+        };
+        sw.postMessage({ type: 'GET_VERSION' }, [mc.port2]);
+      }
+    });
+  }
 }
 
 function closePrefs() {
@@ -2321,7 +2316,8 @@ function setFontSize(size, el) {
   p.fontSize = size;
   savePrefs(p);
   document.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.font) === size));
-  document.body.style.fontSize = size + 'px';
+  // --font-base est utilisé par body { font-size: var(--font-base) } — se propage à tout le document
+  document.documentElement.style.setProperty('--font-base', size + 'px');
 }
 
 function setTheme(theme, el) {
@@ -2332,24 +2328,31 @@ function setTheme(theme, el) {
   applyTheme(theme);
 }
 
+// Vrai mode sombre contrasté — fond nuit profonde, texte crème clair
 function applyTheme(theme) {
+  const root = document.documentElement;
   if (theme === 'dark') {
-    document.documentElement.style.setProperty('--bg', '#F0EAE0');
-    document.documentElement.style.setProperty('--surface', '#FFFFFF');
-    document.documentElement.style.setProperty('--surface2', '#F5F0E8');
-    document.documentElement.style.setProperty('--text', '#2C2416');
-    document.documentElement.style.setProperty('--text2', '#6B5D4F');
-    document.documentElement.style.setProperty('--text3', '#A89880');
-    document.documentElement.style.setProperty('--border', '#E0D5C5');
+    root.style.setProperty('--bg',       '#0E0C0A');
+    root.style.setProperty('--surface',  '#1A1612');
+    root.style.setProperty('--surface2', '#252018');
+    root.style.setProperty('--text',     '#F0EBE3');
+    root.style.setProperty('--text2',    '#B8A898');
+    root.style.setProperty('--text3',    '#7A6A5A');
+    root.style.setProperty('--border',   '#2E2820');
+    root.style.setProperty('--tag-bg',   '#2A231A');
+    root.style.setProperty('--shadow',   '0 4px 24px rgba(0,0,0,0.55)');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#0E0C0A');
   } else {
-    // Remettre les valeurs par défaut
-    document.documentElement.style.setProperty('--bg', '#FDFAF5');
-    document.documentElement.style.setProperty('--surface', '#FFFFFF');
-    document.documentElement.style.setProperty('--surface2', '#F5F0E8');
-    document.documentElement.style.setProperty('--text', '#2C2416');
-    document.documentElement.style.setProperty('--text2', '#6B5D4F');
-    document.documentElement.style.setProperty('--text3', '#A89880');
-    document.documentElement.style.setProperty('--border', '#E8E0D0');
+    root.style.setProperty('--bg',       '#FDFAF5');
+    root.style.setProperty('--surface',  '#FFFFFF');
+    root.style.setProperty('--surface2', '#F5F0E8');
+    root.style.setProperty('--text',     '#1A1208');
+    root.style.setProperty('--text2',    '#6B5D4F');
+    root.style.setProperty('--text3',    '#A8968A');
+    root.style.setProperty('--border',   '#E8DDD0');
+    root.style.setProperty('--tag-bg',   '#EDE5D8');
+    root.style.setProperty('--shadow',   '0 4px 24px rgba(26,18,8,0.08)');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#C4622D');
   }
 }
 
@@ -2358,9 +2361,6 @@ function togglePref(key, btn) {
   p[key] = !p[key];
   savePrefs(p);
   btn.classList.toggle('on', p[key]);
-  if (key === 'accomp') {
-    document.documentElement.style.setProperty('--accomp-display', p.accomp ? 'block' : 'none');
-  }
   if (key === 'taste') {
     document.documentElement.style.setProperty('--taste-display', p.taste ? 'block' : 'none');
   }
