@@ -605,6 +605,48 @@
     .prefs-about-line span:first-child { color: var(--text3); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
     .prefs-about-val { color: var(--text); font-weight: 500; }
 
+    /* ---- ONGLET INSTALLATION ---- */
+    .install-link-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .install-link-url {
+      font-size: 13px; color: var(--accent); font-weight: 500;
+      word-break: break-all; line-height: 1.4;
+    }
+    .install-link-btns { display: flex; gap: 8px; }
+    .install-btn-copy, .install-btn-open {
+      flex: 1; padding: 9px 10px; border-radius: 8px; text-align: center;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all .15s; border: 1px solid var(--border);
+      text-decoration: none;
+    }
+    .install-btn-copy { background: var(--accent); color: white; border-color: var(--accent); }
+    .install-btn-copy:hover { filter: brightness(1.1); }
+    .install-btn-copy.copied { background: #4a7c59; border-color: #4a7c59; }
+    .install-btn-open { background: var(--surface); color: var(--text2); }
+    .install-btn-open:hover { border-color: var(--accent); color: var(--accent); }
+    .install-steps {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 8px;
+      counter-reset: step-counter;
+    }
+    .install-steps li {
+      counter-increment: step-counter;
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 14px; color: var(--text2); line-height: 1.5;
+    }
+    .install-steps li::before {
+      content: counter(step-counter);
+      min-width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); color: white;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .install-steps li strong { color: var(--text); }
+
     /* ---- BOUTON 🔍 DANS LA BARRE ---- */
     .search-bar-go {
       position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
@@ -827,7 +869,7 @@
     </div>
     <div class="prefs-tabs">
       <button class="prefs-tab active" onclick="setPrefTab('affichage',this)">🖥 Affichage</button>
-      <button class="prefs-tab" onclick="setPrefTab('catalogue',this)">📚 Catalogue</button>
+      <button class="prefs-tab" onclick="setPrefTab('install',this)">📱 Installation</button>
       <button class="prefs-tab" onclick="setPrefTab('about',this)">ℹ️ À propos</button>
     </div>
 
@@ -851,29 +893,42 @@
       </div>
     </div>
 
-    <!-- Onglet Catalogue -->
-    <div class="prefs-section" id="prefs-catalogue">
+    <!-- Onglet Installation -->
+    <div class="prefs-section" id="prefs-install">
+
+      <!-- Lien à copier / ouvrir -->
       <div class="prefs-row">
-        <div class="prefs-label">Mode d'affichage par défaut</div>
-        <div class="prefs-options">
-          <button class="prefs-option active" data-catmode="cat" onclick="setPrefCatMode('cat',this)">🍽 Type de plat</button>
-          <button class="prefs-option" data-catmode="origin" onclick="setPrefCatMode('origin',this)">🌍 Culture</button>
+        <div class="prefs-label">Lien de l'application</div>
+        <div class="install-link-box">
+          <span class="install-link-url" id="install-url">https://a-rech.github.io/marecette</span>
+          <div class="install-link-btns">
+            <button class="install-btn-copy" onclick="copyInstallLink(this)">📋 Copier</button>
+            <a class="install-btn-open" href="https://a-rech.github.io/marecette" target="_blank" rel="noopener">🌐 Ouvrir</a>
+          </div>
         </div>
       </div>
+
+      <!-- Instructions Android -->
       <div class="prefs-row">
-        <div class="prefs-label">Filtre végétarien par défaut</div>
-        <div class="prefs-options">
-          <button class="prefs-option active" data-veg="all" onclick="setPrefVeg('all',this)">Toutes les recettes</button>
-          <button class="prefs-option" data-veg="veg" onclick="setPrefVeg('veg',this)">🥗 Végétarien</button>
-        </div>
+        <div class="prefs-label">Android (Chrome)</div>
+        <ol class="install-steps">
+          <li>Ouvrez le lien ci-dessus dans <strong>Chrome</strong></li>
+          <li>Appuyez sur le menu <strong>⋮</strong> en haut à droite</li>
+          <li>Sélectionnez <strong>« Ajouter à l'écran d'accueil »</strong></li>
+          <li>Appuyez sur <strong>« Installer »</strong></li>
+        </ol>
       </div>
-      <div class="prefs-toggle-row">
-        <div>
-          <div class="prefs-toggle-label">Ordre aléatoire</div>
-          <div class="prefs-toggle-sub">Mélanger les recettes à chaque ouverture</div>
-        </div>
-        <button class="toggle-switch on" id="toggle-shuffle" onclick="togglePref('shuffle',this)"></button>
+
+      <!-- Instructions iPhone -->
+      <div class="prefs-row">
+        <div class="prefs-label">iPhone / iPad (Safari)</div>
+        <ol class="install-steps">
+          <li>Ouvrez le lien ci-dessus dans <strong>Safari</strong></li>
+          <li>Appuyez sur l'icône <strong>Partager ↑</strong> en bas de l'écran</li>
+          <li>Sélectionnez <strong>« Sur l'écran d'accueil »</strong></li>
+        </ol>
       </div>
+
     </div>
 
     <!-- Onglet À propos -->
@@ -2339,12 +2394,6 @@ function syncPrefUI(p) {
   document.querySelectorAll('[data-theme]').forEach(b => {
     b.classList.toggle('active', b.dataset.theme === p.theme);
   });
-  document.querySelectorAll('[data-catmode]').forEach(b => {
-    b.classList.toggle('active', b.dataset.catmode === p.catMode);
-  });
-  document.querySelectorAll('[data-veg]').forEach(b => {
-    b.classList.toggle('active', b.dataset.veg === p.vegDefault);
-  });
   const ts = document.getElementById('toggle-shuffle');
   if (ts) ts.classList.toggle('on', p.shuffle);
 }
@@ -2453,18 +2502,29 @@ function togglePref(key, btn) {
   btn.classList.toggle('on', p[key]);
 }
 
-function setPrefCatMode(mode, el) {
-  const p = loadPrefs();
-  p.catMode = mode;
-  savePrefs(p);
-  document.querySelectorAll('[data-catmode]').forEach(b => b.classList.toggle('active', b.dataset.catmode === mode));
-}
-
-function setPrefVeg(val, el) {
-  const p = loadPrefs();
-  p.vegDefault = val;
-  savePrefs(p);
-  document.querySelectorAll('[data-veg]').forEach(b => b.classList.toggle('active', b.dataset.veg === val));
+function copyInstallLink(btn) {
+  const url = 'https://a-rech.github.io/marecette';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      btn.textContent = '✓ Copié !';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = '📋 Copier';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  } else {
+    // Fallback pour navigateurs sans clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copié !';
+    setTimeout(function() { btn.textContent = '📋 Copier'; }, 2000);
+  }
 }
 
 // Initialisation au chargement
