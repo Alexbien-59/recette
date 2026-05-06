@@ -21,18 +21,19 @@
 
 ## Installer l'application
 
-### iPhone / iPad
-
-1. Ouvrez l'URL dans **Safari**
-2. Appuyez sur l'icône **Partager** en bas de l'écran
-3. Sélectionnez **"Sur l'écran d'accueil"**
-4. Confirmez — l'icône 🍳 apparaît sur votre écran
-
 ### Android
 
 1. Ouvrez l'URL dans **Chrome**
 2. Appuyez sur le menu **⋮** en haut à droite
 3. Sélectionnez **"Ajouter à l'écran d'accueil"**
+4. Cliquer sur **"Installer"**
+
+### iPhone / iPad
+
+1. Ouvrez l'URL dans **Safari**
+2. Appuyez sur l'icône **Partager** en bas de l'écran
+3. Sélectionnez **"Sur l'écran d'accueil"**
+4. Confirmez — l'icône apparaît sur votre écran
 
 ---
 
