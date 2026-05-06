@@ -1577,9 +1577,10 @@ function buildAccompagnement(id) {
 
 // ── Navigation avec pile de pages ──────────────────────────────────────
 // ── Navigation ─────────────────────────────────────────────────────────
-// pageStack = pile des pages visitées. Ex : ['home','catalogue','recipe']
-// navigateTo() est le seul point d'entrée pour les transitions utilisateur.
-// showPage() est réservé au rendu interne (goBack, goHome).
+// pageStack = pile interne des pages visitées.
+// L'History API (pushState / popstate) est synchronisée pour que
+// le bouton retour natif du navigateur/mobile navigue dans la pile
+// au lieu de quitter l'application.
 let pageStack = ['home'];
 
 // Rendu d'une page sans modifier la pile (usage interne uniquement)
@@ -1593,36 +1594,58 @@ function showPage(pageId) {
   if (pageId === 'search')    loadIngredientFamilies();
   if (pageId === 'catalogue') loadCatalogueTabs();
   if (pageId === 'random')    pickRandom();
-  // Masquer le FAB reset dès qu'on quitte le catalogue
   const fabReset = document.getElementById('fab-reset');
   if (fabReset) fabReset.classList.toggle('visible', false);
 }
 
-// Navigation utilisateur : empile la page et affiche
+// Navigation utilisateur : empile la page, affiche, et pousse dans l'History API
 function navigateTo(pageId) {
-  // Ne pas empiler si on est déjà sur cette page
   if (pageStack[pageStack.length - 1] === pageId) {
     showPage(pageId);
     return;
   }
   pageStack.push(pageId);
+  // Chaque nouvelle page crée une entrée dans l'historique du navigateur
+  // → le bouton retour natif déclenchera popstate au lieu de quitter
+  history.pushState({ page: pageId, depth: pageStack.length }, '', '');
   showPage(pageId);
 }
 
-// Retour à la page précédente
+// Retour interne (boutons ← dans l'app)
 function goBack() {
   if (pageStack.length > 1) {
-    pageStack.pop(); // retire la page courante
+    pageStack.pop();
   }
   const prev = pageStack[pageStack.length - 1] || 'home';
+  // Synchronise l'historique navigateur sans créer d'entrée
+  history.replaceState({ page: prev, depth: pageStack.length }, '', '');
   showPage(prev);
 }
 
-// Retour à l'accueil (remet la pile à zéro)
+// Retour à l'accueil
 function goHome() {
   pageStack = ['home'];
+  history.replaceState({ page: 'home', depth: 1 }, '', '');
   showPage('home');
 }
+
+// Intercepte le bouton retour natif du navigateur / barre mobile
+window.addEventListener('popstate', function(e) {
+  if (pageStack.length > 1) {
+    // On est en profondeur : on remonte d'un niveau
+    pageStack.pop();
+    const prev = pageStack[pageStack.length - 1] || 'home';
+    showPage(prev);
+    // Si on n'est plus à l'accueil, on réenregistre un état pour
+    // que le prochain retour soit encore intercepté
+    if (prev !== 'home') {
+      history.pushState({ page: prev, depth: pageStack.length }, '', '');
+    }
+  } else {
+    // On est déjà à l'accueil — laisser le navigateur gérer (quitter la PWA)
+    showPage('home');
+  }
+});
 
 // Ouvre le lexique en mémorisant la page courante
 function openLexique() {
@@ -2529,10 +2552,11 @@ function copyInstallLink(btn) {
 
 // Initialisation au chargement
 window.onload = function() {
-  applyPrefs(); // Appliquer les préférences sauvegardées
+  applyPrefs();
   showPage('home');
+  // Initialise l'état History API pour que le premier popstate soit intercepté
+  history.replaceState({ page: 'home', depth: 1 }, '', '');
 
-  // Bouton retour en haut
   window.addEventListener('scroll', function() {
     const scrollTop = document.getElementById('btn-scroll-top');
     scrollTop.classList.toggle('visible', window.scrollY > 80);
