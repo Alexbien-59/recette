@@ -1,4 +1,4 @@
-# 🍳 MaRecette
+# 🥘 MaRecette
 
 **Cuisine du quotidien** — Trouvez des recettes à partir de vos ingrédients, explorez le catalogue, sauvegardez vos favoris. Installable sur mobile comme une vraie application.
 
