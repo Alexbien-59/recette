@@ -54,6 +54,7 @@
       min-height: 100vh;
       font-size: var(--font-base);
       line-height: 1.6;
+      zoom: var(--font-zoom, 1);
     }
 
     /* ---- NAV ---- */
@@ -433,24 +434,46 @@
       background: #e08080; flex-shrink: 0;
     }
 
-    /* ---- FILTRES CATALOGUE (menus déroulants) ---- */
+    /* ---- FILTRES CATALOGUE (dropdowns emoji custom) ---- */
     .filters-row {
-      display: flex; gap: 8px; margin-bottom: 14px;
+      display: flex; gap: 6px; margin-bottom: 14px; position: relative;
     }
-    .filter-select {
-      flex: 1; min-width: 0;
-      padding: 9px 10px; border-radius: 10px;
+    .filter-btn {
+      flex: 1; height: 40px; border-radius: 10px;
       border: 1px solid var(--border); background: var(--surface);
-      font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text);
-      cursor: pointer; outline: none; transition: border-color .2s;
-      appearance: none; -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239A92B0' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      padding-right: 28px;
+      font-size: 18px; cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
     }
-    .filter-select:focus { border-color: var(--accent); }
-    .filter-select.active { border-color: var(--accent); color: var(--accent); }
+    .filter-btn:hover { border-color: var(--accent); }
+    .filter-btn.active { border-color: var(--accent); background: rgba(196,98,45,.10); }
+    /* Petit indicateur point actif */
+    .filter-btn.active::after {
+      content: ''; position: absolute; top: 5px; right: 5px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+    }
+    /* Dropdown qui s'ouvre sous le bouton */
+    .filter-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; box-shadow: var(--shadow);
+      padding: 10px; z-index: 100;
+      display: none;
+    }
+    .filter-dropdown.open { display: block; }
+    .filter-dropdown-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--text3); font-weight: 500; margin-bottom: 8px; padding: 0 2px;
+    }
+    .filter-dropdown-opts { display: flex; flex-direction: column; gap: 4px; }
+    .filter-opt {
+      padding: 9px 12px; border-radius: 8px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text2);
+      border: 1px solid transparent; transition: all .12s;
+    }
+    .filter-opt:hover { background: var(--surface2); color: var(--text); }
+    .filter-opt.active { background: var(--accent); color: white; border-color: var(--accent); }
 
     /* ---- FAB MISE À JOUR ---- */
     .fab-update {
@@ -485,22 +508,17 @@
 
     /* Accompagnement et profil gustatif masquables via préférences */
     .accompagnement-block { display: var(--accomp-display, block); }
-    .taste-profile { display: var(--taste-display, block); }
 
-    /* ---- BOUTON PRÉFÉRENCES ---- */
-    .fab-prefs {
-      position: fixed; bottom: 24px; left: 24px; z-index: 200;
-      width: 44px; height: 44px; border-radius: 50%;
-      background: var(--surface); border: 1px solid var(--border);
-      cursor: pointer; font-size: 20px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow);
-      transition: opacity .25s, transform .25s, background .15s;
-      opacity: 0; pointer-events: none; transform: translateY(10px);
+    /* ---- BOUTON PRÉFÉRENCES INLINE (bas de page home) ---- */
+    .prefs-home-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 12px 16px; margin-top: 8px;
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface); cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text2);
+      transition: all .2s;
     }
-    .fab-prefs.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .fab-prefs:hover { background: var(--surface2); border-color: var(--accent); }
-    @media (max-width: 480px) { .fab-prefs { bottom: 16px; left: 14px; } }
+    .prefs-home-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
 
     /* ---- PANNEAU PRÉFÉRENCES ---- */
     .prefs-overlay {
@@ -730,6 +748,7 @@
         <p>Laissez-vous inspirer par une recette tirée au hasard</p>
       </div>
     </div>
+    <button class="prefs-home-btn" onclick="openPrefs()">⚙️ Préférences</button>
   </div>
 </div>
 
@@ -771,27 +790,21 @@
     <button class="search-bar-go" onclick="applyAllFilters()" title="Rechercher">🔎</button>
   </div>
 
-  <!-- Filtres en menus déroulants sur une seule ligne -->
-  <div class="filters-row">
-    <select class="filter-select" id="filter-diff-sel" onchange="setFilterSelect('diff', this)">
-      <option value="all">Difficulté</option>
-      <option value="facile">🟢 Facile</option>
-      <option value="moyen">🟡 Moyen</option>
-      <option value="difficile">🔴 Difficile</option>
-    </select>
-    <select class="filter-select" id="filter-price-sel" onchange="setFilterSelect('price', this)">
-      <option value="all">Prix</option>
-      <option value="1">€ Économique</option>
-      <option value="2">€€ Moyen</option>
-      <option value="3">€€€ Élevé</option>
-    </select>
-    <select class="filter-select" id="filter-time-sel" onchange="setFilterSelect('time', this)">
-      <option value="all">Temps</option>
-      <option value="15">≤ 15 min</option>
-      <option value="30">≤ 30 min</option>
-      <option value="45">≤ 45 min</option>
-      <option value="60">≤ 1 h</option>
-    </select>
+  <!-- 4 filtres emoji sur une ligne avec dropdown au clic -->
+  <div class="filters-row" id="filters-row">
+    <!-- Difficulté -->
+    <button class="filter-btn" id="fbtn-diff" onclick="toggleFilterDrop('diff')" title="Difficulté">⚖️</button>
+    <!-- Prix -->
+    <button class="filter-btn" id="fbtn-price" onclick="toggleFilterDrop('price')" title="Prix">€</button>
+    <!-- Temps -->
+    <button class="filter-btn" id="fbtn-time" onclick="toggleFilterDrop('time')" title="Temps">⌛</button>
+    <!-- Végétarien -->
+    <button class="filter-btn" id="fbtn-veg" onclick="toggleFilterDrop('veg')" title="Végétarien">🥗</button>
+    <!-- Dropdown unique partagé -->
+    <div class="filter-dropdown" id="filter-dropdown">
+      <div class="filter-dropdown-title" id="filter-dropdown-title"></div>
+      <div class="filter-dropdown-opts" id="filter-dropdown-opts"></div>
+    </div>
   </div>
 
   <!-- Mode : Type de plat / Culture -->
@@ -804,8 +817,6 @@
 </div>
 
 <!-- FAB mise à jour PWA -->
-<button class="fab-prefs" id="fab-prefs" onclick="openPrefs()" title="Préférences">⚙️</button>
-
 <!-- PANNEAU PRÉFÉRENCES -->
 <div class="prefs-overlay" id="prefs-overlay" onclick="closePrefsOnOverlay(event)">
   <div class="prefs-panel" id="prefs-panel">
@@ -837,13 +848,6 @@
           <button class="prefs-option active" data-theme="light" onclick="setTheme('light',this)">☀️ Clair</button>
           <button class="prefs-option" data-theme="dark" onclick="setTheme('dark',this)">🌙 Sombre</button>
         </div>
-      </div>
-      <div class="prefs-toggle-row">
-        <div>
-          <div class="prefs-toggle-label">Afficher le profil gustatif</div>
-          <div class="prefs-toggle-sub">Barres sucrosité / amertume / alcool</div>
-        </div>
-        <button class="toggle-switch on" id="toggle-taste" onclick="togglePref('taste',this)"></button>
       </div>
     </div>
 
@@ -1530,9 +1534,6 @@ function showPage(pageId) {
   if (!target) return;
   target.classList.add('active');
   document.getElementById('fab-search').classList.toggle('visible', pageId === 'search');
-  // Bouton ⚙️ visible uniquement sur l'accueil
-  const fabPrefs = document.getElementById('fab-prefs');
-  if (fabPrefs) fabPrefs.classList.toggle('visible', pageId === 'home');
   window.scrollTo(0, 0);
   if (pageId === 'search')    loadIngredientFamilies();
   if (pageId === 'catalogue') loadCatalogueTabs();
@@ -1710,11 +1711,12 @@ function doSearch() {
 
 // Mode de filtrage du catalogue : 'cat' ou 'origin'
 // ── CATALOGUE — état des filtres ──────────────────────────────────────────
-let catMode     = 'cat';   // 'cat' | 'origin'
-let catTabValue = 'all';   // valeur de l'onglet actif ('all', '__favs__', '__veg__', nom catégorie...)
-let filterDiff  = 'all';   // 'all' | 'facile' | 'moyen' | 'difficile'
-let filterPrice = 'all';   // 'all' | 1 | 2 | 3
-let filterTime  = 'all';   // 'all' | 15 | 30 | 45 | 60
+let catMode     = 'cat';
+let catTabValue = 'all';
+let filterDiff  = 'all';
+let filterPrice = 'all';
+let filterTime  = 'all';
+let filterVeg   = 'all'; // 'all' | 'veg'
 
 // Bascule mode Type de plat / Culture
 function setCatMode(mode) {
@@ -1725,19 +1727,109 @@ function setCatMode(mode) {
   loadCatalogueTabs();
 }
 
-// Mise à jour d'un filtre via menu déroulant
-function setFilterSelect(type, sel) {
-  const raw = sel.value;
-  const value = (type === 'price' || type === 'time') && raw !== 'all' ? Number(raw) : raw;
-  if (type === 'diff')  filterDiff  = value;
-  if (type === 'price') filterPrice = value;
-  if (type === 'time')  filterTime  = value;
-  // Colore le select si un filtre est actif
-  sel.classList.toggle('active', value !== 'all');
+// ── Filtres catalogue — système dropdown custom ────────────────────────────
+// Définition des filtres : clé, options, titre affiché dans le dropdown
+const FILTER_DEFS = {
+  diff: {
+    title: 'Difficulté',
+    opts: [
+      { val: 'all',       label: 'Toutes' },
+      { val: 'facile',    label: '🟢 Facile' },
+      { val: 'moyen',     label: '🟡 Moyen' },
+      { val: 'difficile', label: '🔴 Difficile' },
+    ]
+  },
+  price: {
+    title: 'Prix par portion',
+    opts: [
+      { val: 'all', label: 'Tous' },
+      { val: 1,     label: '€ Économique' },
+      { val: 2,     label: '€€ Moyen' },
+      { val: 3,     label: '€€€ Élevé' },
+    ]
+  },
+  time: {
+    title: 'Temps total',
+    opts: [
+      { val: 'all', label: 'Tous' },
+      { val: 15,    label: '≤ 15 min' },
+      { val: 30,    label: '≤ 30 min' },
+      { val: 45,    label: '≤ 45 min' },
+      { val: 60,    label: '≤ 1 heure' },
+    ]
+  },
+  veg: {
+    title: 'Régime',
+    opts: [
+      { val: 'all', label: 'Toutes les recettes' },
+      { val: 'veg', label: '🥗 Végétarien seulement' },
+    ]
+  }
+};
+
+let activeDropFilter = null; // quel filtre est ouvert
+
+function toggleFilterDrop(key) {
+  const drop = document.getElementById('filter-dropdown');
+  // Si on reclique sur le même bouton ouvert → fermer
+  if (activeDropFilter === key && drop.classList.contains('open')) {
+    closeFilterDrop();
+    return;
+  }
+  activeDropFilter = key;
+  const def = FILTER_DEFS[key];
+  // Titre
+  document.getElementById('filter-dropdown-title').textContent = def.title;
+  // Options
+  const currentVal = key === 'diff' ? filterDiff
+    : key === 'price' ? filterPrice
+    : key === 'time'  ? filterTime
+    : filterVeg;
+  document.getElementById('filter-dropdown-opts').innerHTML = def.opts.map(o => {
+    // Valeur à passer à selectFilterOpt : string → apostrophes, number → sans guillemets
+    const valArg = typeof o.val === 'string' ? `'${o.val}'` : o.val;
+    return `<div class="filter-opt${o.val === currentVal ? ' active' : ''}"
+         onclick="selectFilterOpt('${key}', ${valArg})">${o.label}</div>`;
+  }).join('');
+  // Positionner le dropdown sous le bon bouton
+  const btn = document.getElementById('fbtn-' + key);
+  const row = document.getElementById('filters-row');
+  const btnLeft = btn.offsetLeft;
+  const btnWidth = btn.offsetWidth;
+  const rowWidth = row.offsetWidth;
+  const dropWidth = Math.min(rowWidth, 220);
+  let left = btnLeft + btnWidth / 2 - dropWidth / 2;
+  left = Math.max(0, Math.min(left, rowWidth - dropWidth));
+  drop.style.width = dropWidth + 'px';
+  drop.style.left = left + 'px';
+  drop.style.right = 'auto';
+  drop.classList.add('open');
+}
+
+function selectFilterOpt(key, val) {
+  if (key === 'diff')  filterDiff  = val;
+  if (key === 'price') filterPrice = val;
+  if (key === 'time')  filterTime  = val;
+  if (key === 'veg')   filterVeg   = val;
+  // Mettre à jour l'état actif du bouton emoji
+  const btn = document.getElementById('fbtn-' + key);
+  btn.classList.toggle('active', val !== 'all');
+  closeFilterDrop();
   applyAllFilters();
 }
 
-// Construit et affiche les onglets de catégorie
+function closeFilterDrop() {
+  document.getElementById('filter-dropdown').classList.remove('open');
+  activeDropFilter = null;
+}
+
+// Fermer le dropdown si clic en dehors
+document.addEventListener('click', function(e) {
+  const row = document.getElementById('filters-row');
+  if (row && !row.contains(e.target)) closeFilterDrop();
+});
+
+// Construit et affiche les onglets de catégorie (sans végétarien — c'est un filtre)
 function loadCatalogueTabs() {
   const tabsContainer = document.getElementById('cat-tabs');
   const field = catMode === 'cat' ? 'cat' : 'origin';
@@ -1745,9 +1837,6 @@ function loadCatalogueTabs() {
   const favCount = getFavorites().length;
 
   let html = `<div class="cat-tab" style="border-color:#e08080;color:#c05050" data-val="__favs__">❤️ Favoris (${favCount})</div>`;
-  if (catMode === 'cat') {
-    html += `<div class="cat-tab" style="border-color:#3a7a3a;color:#3a7a3a" data-val="__veg__">🥗 Végétarien (${VEG_SET.size})</div>`;
-  }
   html += `<div class="cat-tab active" data-val="all">Toutes (${RECIPES.length})</div>`;
   html += uniqueValues.map(val =>
     `<div class="cat-tab" data-val="${val.replace(/"/g,'&quot;')}">${val} (${RECIPES.filter(r => r[field] === val).length})</div>`
@@ -1777,8 +1866,6 @@ function applyAllFilters() {
   if (catTabValue === '__favs__') {
     const favIds = getFavorites();
     pool = RECIPES.filter(r => favIds.includes(r.id));
-  } else if (catTabValue === '__veg__') {
-    pool = RECIPES.filter(r => VEG_SET.has(r.id));
   } else if (catTabValue === 'all') {
     pool = RECIPES.slice();
   } else {
@@ -1811,8 +1898,13 @@ function applyAllFilters() {
     pool = pool.filter(r => (r.prep + r.cook) <= filterTime);
   }
 
+  // 5. Végétarien
+  if (filterVeg === 'veg') {
+    pool = pool.filter(r => VEG_SET.has(r.id));
+  }
+
   // Afficher le FAB reset si au moins un filtre ou recherche actif
-  const hasActiveFilter = query || filterDiff !== 'all' || filterPrice !== 'all' || filterTime !== 'all' || catTabValue !== 'all';
+  const hasActiveFilter = query || filterDiff !== 'all' || filterPrice !== 'all' || filterTime !== 'all' || filterVeg !== 'all' || catTabValue !== 'all';
   document.getElementById('fab-reset').classList.toggle('visible', hasActiveFilter);
 
   if (pool.length === 0) {
@@ -1829,25 +1921,24 @@ function applyAllFilters() {
 
 // Réinitialise TOUS les filtres et remonte en haut
 function resetAllFilters() {
-  // Reset variables
   catTabValue = 'all';
   filterDiff  = 'all';
   filterPrice = 'all';
   filterTime  = 'all';
+  filterVeg   = 'all';
 
-  // Reset UI : barre de recherche
   document.getElementById('cat-search-input').value = '';
   document.getElementById('cat-search-clear').style.display = 'none';
 
-  // Reset selects
-  ['filter-diff-sel','filter-price-sel','filter-time-sel'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (sel) { sel.value = 'all'; sel.classList.remove('active'); }
+  // Remettre tous les boutons filtres inactifs
+  ['diff','price','time','veg'].forEach(k => {
+    const btn = document.getElementById('fbtn-' + k);
+    if (btn) btn.classList.remove('active');
   });
+  closeFilterDrop();
 
-  // Reset onglet : remettre "Toutes" actif
-  document.querySelectorAll('#cat-tabs .cat-tab').forEach((t, i) => {
-    // L'onglet "Toutes" est le 3ème (après Favoris et éventuellement Végé)
+  // Remettre l'onglet "Toutes" actif
+  document.querySelectorAll('#cat-tabs .cat-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.val === 'all');
   });
 
@@ -1883,7 +1974,6 @@ function renderCatalogueGrid(recipes) {
     </div>`;
 }
 
-// Filtre du catalogue — conservé pour compatibilité (délégation dans loadCatalogueTabs)
 function filterCatalogue(value, tabEl) {
   catTabValue = value;
   applyAllFilters();
@@ -2233,12 +2323,10 @@ function savePrefs(prefs) {
 // Appliquer toutes les préférences au démarrage
 function applyPrefs() {
   const p = loadPrefs();
-  // Taille de police via CSS custom property — propagée à tout le document
-  document.documentElement.style.setProperty('--font-base', p.fontSize + 'px');
+  // Zoom global : scale tout le body proportionnellement
+  document.documentElement.style.setProperty('--font-zoom', (p.fontSize / 16).toFixed(4));
   // Thème
   applyTheme(p.theme);
-  // Profil gustatif
-  document.documentElement.style.setProperty('--taste-display', p.taste ? 'block' : 'none');
   // Mode catalogue par défaut
   if (p.catMode) catMode = p.catMode;
 }
@@ -2251,8 +2339,6 @@ function syncPrefUI(p) {
   document.querySelectorAll('[data-theme]').forEach(b => {
     b.classList.toggle('active', b.dataset.theme === p.theme);
   });
-  const tt = document.getElementById('toggle-taste');
-  if (tt) tt.classList.toggle('on', p.taste);
   document.querySelectorAll('[data-catmode]').forEach(b => {
     b.classList.toggle('active', b.dataset.catmode === p.catMode);
   });
@@ -2310,14 +2396,18 @@ function setPrefTab(tab, el) {
   document.getElementById('prefs-' + tab).classList.add('active');
 }
 
-// Actions sur chaque préférence
+// setFontSize : utilise CSS zoom sur body — scale TOUT proportionnellement
+// sans avoir à modifier aucun px dans le CSS.
+// Base de référence : 16px (zoom = 1.0)
+// 14px → 0.875 / 16px → 1.0 / 18px → 1.125 / 20px → 1.25
 function setFontSize(size, el) {
   const p = loadPrefs();
   p.fontSize = size;
   savePrefs(p);
-  document.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.font) === size));
-  // --font-base est utilisé par body { font-size: var(--font-base) } — se propage à tout le document
-  document.documentElement.style.setProperty('--font-base', size + 'px');
+  document.querySelectorAll('[data-font]').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.font) === size)
+  );
+  document.documentElement.style.setProperty('--font-zoom', (size / 16).toFixed(4));
 }
 
 function setTheme(theme, el) {
@@ -2361,9 +2451,6 @@ function togglePref(key, btn) {
   p[key] = !p[key];
   savePrefs(p);
   btn.classList.toggle('on', p[key]);
-  if (key === 'taste') {
-    document.documentElement.style.setProperty('--taste-display', p.taste ? 'block' : 'none');
-  }
 }
 
 function setPrefCatMode(mode, el) {
