@@ -2,7 +2,7 @@
 
 **Cuisine du quotidien** — Trouvez des recettes à partir de vos ingrédients, explorez le catalogue, sauvegardez vos favoris. Installable sur mobile comme une vraie application.
 
-[![Ouvrir l'application](https://img.shields.io/badge/▶%20Ouvrir%20l'application-C4622D?style=for-the-badge)](https://alexbien-59.github.io/marecette/)
+[![Ouvrir l'application](https://img.shields.io/badge/▶%20Ouvrir%20l'application-C4622D?style=for-the-badge)](https://a-rech.github.io/marecette/)
 
 ---
 
