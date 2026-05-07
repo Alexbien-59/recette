@@ -2632,7 +2632,7 @@ function copyInstallLink(btn) {
 function shareInstallLink() {
   const url   = 'https://a-rech.github.io/marecette';
   const title = 'MaRecette — Cuisine du quotidien';
-  const text  = 'Découvrez MaRecette : recettes du quotidien, recherche par ingrédients, favoris et notes.';
+  const text  = 'Découvrez MaRecette : recherche par ingrédients, dans catalogue et recette au hasard.';
   if (navigator.share) {
     navigator.share({ title, text, url })
       .catch(function(e) { if (e.name !== 'AbortError') console.warn('Partage annulé', e); });
