@@ -1608,8 +1608,8 @@ function showPage(pageId) {
   if (pageId === 'search')    loadIngredientFamilies();
   if (pageId === 'catalogue') loadCatalogueTabs();
   if (pageId === 'random')    pickRandom();
-  const fabReset = document.getElementById('fab-reset');
-  if (fabReset) fabReset.classList.toggle('visible', false);
+  // Synchronise la visibilité du bouton Réinitialiser selon la page et l'état des filtres
+  syncFabReset(pageId);
 }
 
 // Navigation utilisateur : empile la page, affiche, et pousse dans l'History API
@@ -1995,9 +1995,8 @@ function applyAllFilters() {
     pool = pool.filter(r => VEG_SET.has(r.id));
   }
 
-  // Afficher le FAB reset si au moins un filtre ou recherche actif
-  const hasActiveFilter = query || filterDiff !== 'all' || filterPrice !== 'all' || filterTime !== 'all' || filterVeg !== 'all' || catTabValue !== 'all';
-  document.getElementById('fab-reset').classList.toggle('visible', hasActiveFilter);
+  // Synchronise le bouton Réinitialiser selon l'état réel des filtres
+  syncFabReset('catalogue');
 
   if (pool.length === 0) {
     document.getElementById('catalogue-results').innerHTML =
@@ -2034,7 +2033,7 @@ function resetAllFilters() {
     t.classList.toggle('active', t.dataset.val === 'all');
   });
 
-  document.getElementById('fab-reset').classList.remove('visible');
+  syncFabReset('catalogue'); // Masque le bouton car plus aucun filtre actif
   renderCatalogueGrid(shuffle(RECIPES.slice()));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2081,10 +2080,27 @@ function clearCatSearch() {
   applyAllFilters();
 }
 
-// Affiche/masque le FAB reset selon la page active
-function updateFabReset(pageId) {
+// Synchronise la visibilité du bouton Réinitialiser.
+// Visible UNIQUEMENT dans le catalogue ET quand au moins un filtre est actif.
+// Appelé à chaque changement de page et à chaque modification de filtre.
+function syncFabReset(pageId) {
+  // Si pageId non fourni, déduire depuis la page active
+  if (!pageId) {
+    const active = document.querySelector('.page.active');
+    pageId = active ? active.id.replace('page-', '') : 'home';
+  }
+  const hasFilter = hasCatalogueFilter();
   const fab = document.getElementById('fab-reset');
-  if (fab) fab.classList.toggle('visible', false); // toujours masqué au changement de page
+  if (fab) fab.classList.toggle('visible', pageId === 'catalogue' && hasFilter);
+}
+
+// Retourne true si au moins un filtre ou une recherche est actif dans le catalogue
+function hasCatalogueFilter() {
+  const query = document.getElementById('cat-search-input')
+    ? document.getElementById('cat-search-input').value.trim()
+    : '';
+  return !!(query || filterDiff !== 'all' || filterPrice !== 'all'
+         || filterTime !== 'all' || filterVeg !== 'all' || catTabValue !== 'all');
 }
 
 // ── PAGE RANDOM : salé / sucré ─────────────────────────────────────────
