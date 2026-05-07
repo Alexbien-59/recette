@@ -641,10 +641,40 @@
     .install-btn-copy.copied { background: #4a7c59; border-color: #4a7c59; }
     .install-btn-open { background: var(--surface); color: var(--text2); }
     .install-btn-open:hover { border-color: var(--accent); color: var(--accent); }
+    .install-details {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .install-summary {
+      list-style: none;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .install-summary::-webkit-details-marker { display: none; }
+    .install-summary:hover { background: var(--surface2); }
+    .install-summary .prefs-label {
+      margin-bottom: 0;
+      color: var(--text);
+    }
+    .install-arrow {
+      font-size: 14px;
+      color: var(--text3);
+      transition: transform .2s, color .2s;
+      flex-shrink: 0;
+    }
+    .install-details[open] .install-arrow {
+      transform: rotate(90deg);
+      color: var(--accent);
+    }
     .install-steps {
-      list-style: none; padding: 0; margin: 0;
+      list-style: none; padding: 14px 16px 16px; margin: 0;
       display: flex; flex-direction: column; gap: 8px;
       counter-reset: step-counter;
+      border-top: 1px solid var(--border);
     }
     .install-steps li {
       counter-increment: step-counter;
@@ -849,7 +879,7 @@
   <!-- 4 filtres emoji sur une ligne avec dropdown au clic -->
   <div class="filters-row" id="filters-row">
     <!-- Difficulté -->
-    <button class="filter-btn" id="fbtn-diff" onclick="toggleFilterDrop('diff')" title="Difficulté">⚖️</button>
+    <button class="filter-btn" id="fbtn-diff" onclick="toggleFilterDrop('diff')" title="Difficulté">📈</button>
     <!-- Prix -->
     <button class="filter-btn" id="fbtn-price" onclick="toggleFilterDrop('price')" title="Prix">€</button>
     <!-- Temps -->
@@ -924,23 +954,33 @@
 
       <!-- Instructions Android -->
       <div class="prefs-row">
-        <div class="prefs-label">Android (Chrome)</div>
-        <ol class="install-steps">
-          <li>Ouvrez le lien ci-dessus dans <strong>Chrome</strong></li>
-          <li>Appuyez sur le menu <strong>⋮</strong> en haut à droite</li>
-          <li>Sélectionnez <strong>« Ajouter à l'écran d'accueil »</strong></li>
-          <li>Appuyez sur <strong>« Installer »</strong></li>
-        </ol>
+        <details class="install-details">
+          <summary class="install-summary">
+            <span class="prefs-label">Android (Chrome)</span>
+            <span class="install-arrow" aria-hidden="true">›</span>
+          </summary>
+          <ol class="install-steps">
+            <li>Ouvrez le lien ci-dessus dans <strong>Chrome</strong></li>
+            <li>Appuyez sur le menu <strong>⋮</strong> en haut à droite</li>
+            <li>Sélectionnez <strong>« Ajouter à l'écran d'accueil »</strong></li>
+            <li>Appuyez sur <strong>« Installer »</strong></li>
+          </ol>
+        </details>
       </div>
 
       <!-- Instructions iPhone -->
       <div class="prefs-row">
-        <div class="prefs-label">iPhone / iPad (Safari)</div>
-        <ol class="install-steps">
-          <li>Ouvrez le lien ci-dessus dans <strong>Safari</strong></li>
-          <li>Appuyez sur l'icône <strong>Partager ↑</strong> en bas de l'écran</li>
-          <li>Sélectionnez <strong>« Sur l'écran d'accueil »</strong></li>
-        </ol>
+        <details class="install-details">
+          <summary class="install-summary">
+            <span class="prefs-label">iPhone / iPad (Safari)</span>
+            <span class="install-arrow" aria-hidden="true">›</span>
+          </summary>
+          <ol class="install-steps">
+            <li>Ouvrez le lien ci-dessus dans <strong>Safari</strong></li>
+            <li>Appuyez sur l'icône <strong>Partager ↑</strong> en bas de l'écran</li>
+            <li>Sélectionnez <strong>« Sur l'écran d'accueil »</strong></li>
+          </ol>
+        </details>
       </div>
 
     </div>
