@@ -1,6 +1,6 @@
 # 🥘 MaRecette
 
-**Cuisine du quotidien** — Trouvez des recettes à partir de vos ingrédients, explorez le catalogue, sauvegardez vos favoris. Installable sur mobile comme une vraie application.
+**Cuisine du quotidien** — Trouvez des recettes compatible à vos ingrédients, explorez le catalogue, sauvegardez vos favoris. Installable sur mobile comme une vraie application.
 
 [![Ouvrir l'application](https://img.shields.io/badge/▶%20Ouvrir%20l'application-C4622D?style=for-the-badge)](https://a-rech.github.io/marecette/)
 
@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| 🔍 **Recherche par ingrédients** | Sélectionnez ce que vous avez, obtenez les recettes compatibles triées par correspondance |
+| 🔍 **Recherche par ingrédients** | Sélectionnez vos ingrédients, obtenez les recettes compatibles triées par correspondance |
 | 📚 **Catalogue complet** | Filtrez par type de plat ou par culture culinaire |
 | 🎲 **Recette aléatoire** | Laissez-vous inspirer |
 | ❤️ **Favoris** | Sauvegardés localement, affichés en tête du catalogue |
