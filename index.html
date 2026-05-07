@@ -881,14 +881,14 @@
 
   <!-- Barre de recherche texte avec bouton 🔍 -->
   <div class="search-bar-wrap">
-    <span class="search-bar-icon">🔍</span>
+    <span class="search-bar-icon"> </span>
     <input class="search-bar-input" id="cat-search-input" type="text"
-      placeholder="Rechercher dans le catalogue..."
+      placeholder="Rechercher une recette ..."
       oninput="onCatSearch(this.value)"
       onkeydown="if(event.key==='Enter') applyAllFilters()"
       autocomplete="off" style="padding-right:78px">
     <button class="search-bar-clear" id="cat-search-clear" onclick="clearCatSearch()">✕</button>
-    <button class="search-bar-go" onclick="applyAllFilters()" title="Rechercher"> → </button>
+    <button class="search-bar-go" onclick="applyAllFilters()" title="Rechercher">→</button>
   </div>
 
   <!-- 4 filtres emoji sur une ligne avec dropdown au clic -->
