@@ -619,6 +619,28 @@
     .prefs-about-line:last-child { border-bottom: none; }
     .prefs-about-line span:first-child { color: var(--text3); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
     .prefs-about-val { color: var(--text); font-weight: 500; }
+
+    /* ── ONGLET DONNÉES ── */
+    .data-action-btn {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 14px 16px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      color: var(--text); cursor: pointer; transition: all .2s; text-align: left;
+      margin-bottom: 10px;
+    }
+    .data-action-btn:hover { border-color: var(--accent); background: var(--surface2); }
+    .data-action-btn .btn-icon { font-size: 22px; flex-shrink: 0; }
+    .data-action-btn .btn-desc { font-size: 12px; color: var(--text3); font-weight: 400; margin-top: 2px; }
+    .data-action-btn.danger { border-color: #e08080; color: #c05050; }
+    .data-action-btn.danger:hover { background: #f5e6e6; }
+    .data-status {
+      padding: 10px 14px; border-radius: 10px; font-size: 13px;
+      margin-top: 4px; display: none;
+    }
+    .data-status.ok  { background: #E8F3E6; color: #3a7a3a; display: block; }
+    .data-status.err { background: #F5E6E6; color: #c05050; display: block; }
+    .data-divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
     @media (min-width: 900px) {
       .prefs-panel {
         left: 50%;
@@ -929,6 +951,7 @@
     <div class="prefs-tabs">
       <button class="prefs-tab active" onclick="setPrefTab('affichage',this)">🖥 Affichage</button>
       <button class="prefs-tab" onclick="setPrefTab('install',this)">📱 Installation</button>
+      <button class="prefs-tab" onclick="setPrefTab('donnees',this)">💾 Données</button>
       <button class="prefs-tab" onclick="setPrefTab('about',this)">ℹ️ À propos</button>
     </div>
 
@@ -996,6 +1019,55 @@
             <li>Sélectionnez <strong>« Sur l'écran d'accueil »</strong></li>
           </ol>
         </details>
+      </div>
+
+    </div>
+
+    <!-- Onglet Données -->
+    <div class="prefs-section" id="prefs-donnees">
+
+      <!-- Export -->
+      <div class="prefs-row">
+        <div class="prefs-label">Exporter mes données</div>
+        <button class="data-action-btn" onclick="exportData()">
+          <span class="btn-icon">📤</span>
+          <div>
+            <div>Exporter favoris &amp; notes</div>
+            <div class="btn-desc">Télécharge un fichier .json à conserver ou transférer</div>
+          </div>
+        </button>
+        <div class="data-status" id="export-status"></div>
+      </div>
+
+      <hr class="data-divider">
+
+      <!-- Import -->
+      <div class="prefs-row">
+        <div class="prefs-label">Importer des données</div>
+        <button class="data-action-btn" onclick="document.getElementById('import-file').click()">
+          <span class="btn-icon">📥</span>
+          <div>
+            <div>Importer un fichier de sauvegarde</div>
+            <div class="btn-desc">Sélectionnez un fichier .json exporté depuis cette app</div>
+          </div>
+        </button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+        <div class="data-status" id="import-status"></div>
+      </div>
+
+      <hr class="data-divider">
+
+      <!-- Réinitialiser -->
+      <div class="prefs-row">
+        <div class="prefs-label">Zone de danger</div>
+        <button class="data-action-btn danger" onclick="resetAllData()">
+          <span class="btn-icon">🗑️</span>
+          <div>
+            <div>Effacer toutes mes données</div>
+            <div class="btn-desc">Supprime définitivement favoris, notes et préférences</div>
+          </div>
+        </button>
+        <div class="data-status" id="reset-status"></div>
       </div>
 
     </div>
@@ -2670,6 +2742,127 @@ function toggleCardFav(id, btn) {
   }
 }
 
+
+// ── DONNÉES : EXPORT / IMPORT / RESET ────────────────────────────────────
+
+// Collecte toutes les données utilisateur depuis localStorage
+function collectUserData() {
+  var data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    app: 'MaRecette',
+    favorites: [],
+    notes: {}
+  };
+  // Favoris
+  try { data.favorites = JSON.parse(localStorage.getItem('marecette_favs') || '[]'); } catch(e) {}
+  // Notes : toutes les clés marecette_note_*
+  Object.keys(localStorage).forEach(function(key) {
+    if (key.startsWith('marecette_note_')) {
+      var id = key.replace('marecette_note_', '');
+      data.notes[id] = localStorage.getItem(key);
+    }
+  });
+  return data;
+}
+
+// Télécharge un fichier JSON sur l'appareil
+function exportData() {
+  var data = collectUserData();
+  var favCount = data.favorites.length;
+  var noteCount = Object.keys(data.notes).length;
+
+  if (favCount === 0 && noteCount === 0) {
+    showDataStatus('export-status', 'Aucune donnée à exporter (pas de favoris ni de notes).', false);
+    return;
+  }
+
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'marecette-sauvegarde-' + date + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showDataStatus('export-status',
+    '✓ ' + favCount + ' favori' + (favCount > 1 ? 's' : '') +
+    ' et ' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + ' exportés.', true);
+}
+
+// Lit un fichier JSON importé et restaure les données dans localStorage
+function importData(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      // Validation minimale
+      if (!data || data.app !== 'MaRecette' || data.version !== 1) {
+        showDataStatus('import-status', '✗ Fichier invalide ou incompatible.', false);
+        return;
+      }
+      // Restaurer favoris (fusion : on ajoute sans supprimer les existants)
+      var existingFavs = [];
+      try { existingFavs = JSON.parse(localStorage.getItem('marecette_favs') || '[]'); } catch(e) {}
+      var mergedFavs = Array.from(new Set(existingFavs.concat(data.favorites || [])));
+      localStorage.setItem('marecette_favs', JSON.stringify(mergedFavs));
+
+      // Restaurer notes (fusion : on écrase seulement si la note importée n'est pas vide)
+      var notes = data.notes || {};
+      var noteCount = 0;
+      Object.keys(notes).forEach(function(id) {
+        if (notes[id] && notes[id].trim()) {
+          localStorage.setItem('marecette_note_' + id, notes[id]);
+          noteCount++;
+        }
+      });
+
+      var favAdded = mergedFavs.length - existingFavs.length;
+      showDataStatus('import-status',
+        '✓ Import réussi : ' + favAdded + ' favori' + (favAdded > 1 ? 's' : '') +
+        ' ajouté' + (favAdded > 1 ? 's' : '') +
+        ', ' + noteCount + ' note' + (noteCount > 1 ? 's' : '') + ' restaurée' +
+        (noteCount > 1 ? 's' : '') + '.', true);
+
+      // Réinitialiser le champ fichier pour permettre une ré-importation
+      input.value = '';
+    } catch(err) {
+      showDataStatus('import-status', '✗ Erreur de lecture du fichier : ' + err.message, false);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Efface toutes les données utilisateur (favoris, notes, préférences)
+function resetAllData() {
+  if (!confirm('Supprimer définitivement tous vos favoris, notes et préférences ?\nCette action est irréversible.')) return;
+  // Lister et supprimer toutes les clés marecette_*
+  var keysToDelete = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (key && key.startsWith('marecette_')) keysToDelete.push(key);
+  }
+  keysToDelete.forEach(function(k) { localStorage.removeItem(k); });
+  showDataStatus('reset-status', '✓ Toutes les données ont été effacées.', true);
+  // Réinitialiser les préférences visuelles
+  applyPrefs();
+}
+
+// Affiche un message de statut temporaire sous un bouton
+function showDataStatus(id, msg, ok) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'data-status ' + (ok ? 'ok' : 'err');
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.className = 'data-status'; }, 4000);
+}
 
 // Initialisation au chargement
 window.onload = function() {
