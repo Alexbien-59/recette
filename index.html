@@ -1970,11 +1970,12 @@ const FILTER_DEFS = {
   time: {
     title: 'Temps total',
     opts: [
-      { val: 'all', label: 'Tous' },
-      { val: 15,    label: '≤ 15 min' },
-      { val: 30,    label: '≤ 30 min' },
-      { val: 45,    label: '≤ 45 min' },
-      { val: 60,    label: '≤ 1 heure' },
+      { val: 'all',    label: 'Tous' },
+      { val: 'lt15',   label: '< 15 min' },
+      { val: '15to30', label: '15 à 30 min' },
+      { val: '30to60', label: '30 à 60 min' },
+      { val: '60to90', label: '60 à 90 min' },
+      { val: 'gt90',   label: '> 90 min' },
     ]
   },
   veg: {
@@ -2114,7 +2115,15 @@ function applyAllFilters() {
 
   // 5. Temps total
   if (filterTime !== 'all') {
-    pool = pool.filter(r => (r.prep + r.cook) <= filterTime);
+    pool = pool.filter(r => {
+      const totalTime = r.prep + r.cook;
+      if (filterTime === 'lt15')   return totalTime < 15;
+      if (filterTime === '15to30') return totalTime >= 15 && totalTime <= 30;
+      if (filterTime === '30to60') return totalTime > 30 && totalTime <= 60;
+      if (filterTime === '60to90') return totalTime > 60 && totalTime <= 90;
+      if (filterTime === 'gt90')   return totalTime > 90;
+      return true;
+    });
   }
 
   // 5. Végétarien
